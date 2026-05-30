@@ -5,6 +5,10 @@ Run after migrations:  uv run python seed.py
 Re-runnable: the catalog (categories/products) is reset on each run; the admin
 user is created once and preserved. Change ADMIN_EMAIL / ADMIN_PASSWORD (or via
 env) before using in prod.
+
+NOTE: product images are hotlinked from real Pakistani brand sites (Shopify CDN)
+for demo/portfolio purposes only. Replace with first-party Cloudinary uploads
+(admin panel, Phase 5) before any production use.
 """
 
 import asyncio
@@ -24,114 +28,145 @@ from app.models.user import User
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@store.pk")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin12345")
 
+CDN = "https://cdn.shopify.com/s/files"
 
-def img(photo_id: str, alt: str, order: int) -> ProductImage:
-    return ProductImage(
-        url=f"https://images.unsplash.com/{photo_id}?w=900&q=80",
-        alt=alt,
-        sort_order=order,
-    )
+STITCHED_SIZES = [
+    ("S", 8),
+    ("M", 12),
+    ("L", 6),
+    ("XL", 0),  # one sold-out size for demo
+]
 
 
-# (name, slug, category_key, brand, fabric, piece_count, base, sale,
-#  [photo_ids], [(sku, size, color, hex, stock)])
+def stitched_variants(prefix: str, color: str, hex_: str) -> list[ProductVariant]:
+    return [
+        ProductVariant(
+            sku=f"{prefix}-{size}", size=size, color=color, color_hex=hex_, stock_qty=qty
+        )
+        for size, qty in STITCHED_SIZES
+    ]
+
+
+def unstitched_variant(prefix: str, color: str, hex_: str, qty: int) -> list[ProductVariant]:
+    return [
+        ProductVariant(
+            sku=f"{prefix}-U", size="Unstitched", color=color, color_hex=hex_, stock_qty=qty
+        )
+    ]
+
+
+# (name, slug, category, brand, fabric, pieces, base, sale, image_path, variants)
 PRODUCTS = [
+    # --- Sana Safinaz ---
     (
-        "Alkaram Lawn 3-Piece — Rose Garden",
-        "alkaram-lawn-3pc-rose-garden",
-        "unstitched",
-        "Alkaram",
-        "Lawn",
-        "3-Piece (Unstitched)",
-        "5990.00",
-        "4790.00",
-        ["photo-1610030469983-98e550d6193c", "photo-1594633312681-425c7b97ccd1"],
-        [("ALK-RG-FREE", "Unstitched", "Rose Pink", "#E8A0BF", 25)],
-    ),
-    (
-        "Sana Safinaz Luxury Lawn — Gulposh",
-        "sana-safinaz-luxury-lawn-gulposh",
-        "unstitched",
+        "Sana Safinaz Printed Lawn — Shirt & Shalwar",
+        "sana-safinaz-printed-lawn-shirt-shalwar",
+        "lawn",
         "Sana Safinaz",
         "Lawn",
-        "3-Piece (Unstitched)",
-        "8500.00",
-        "6800.00",
-        ["photo-1595777457583-95e059d581b8", "photo-1469334031218-e382a71b716b"],
-        [("SS-GP-FREE", "Unstitched", "Coral", "#E2725B", 14)],
+        "2-Piece (Stitched)",
+        "5499.00",
+        None,
+        "/1/0740/1753/8280/files/SS26BSP113P2T_1.jpg?v=1779706506",
+        stitched_variants("SS-PL", "Sky Blue", "#8Fb3cf"),
     ),
     (
-        "Gul Ahmed Embroidered Lawn — Meadow",
-        "gul-ahmed-embroidered-lawn-meadow",
+        "Sana Safinaz Embroidered Luxury Lawn",
+        "sana-safinaz-embroidered-luxury-lawn",
+        "lawn",
+        "Sana Safinaz",
+        "Lawn",
+        "3-Piece (Stitched)",
+        "15199.00",
+        "12999.00",
+        "/1/0740/1753/8280/files/SS25LUX106AP2T_1bf508ce-6df3-452a-89f4-57b49a821d52.jpg?v=1779707120",
+        stitched_variants("SS-EL", "Ivory", "#EDE6D6"),
+    ),
+    (
+        "Sana Safinaz Printed Khaddar — Shirt & Culotte",
+        "sana-safinaz-printed-khaddar-shirt-culotte",
+        "stitched",
+        "Sana Safinaz",
+        "Khaddar",
+        "2-Piece (Stitched)",
+        "5899.00",
+        None,
+        "/1/0740/1753/8280/files/FW25BSP006_1_1.jpg?v=1764318817",
+        stitched_variants("SS-KC", "Rust", "#A4502F"),
+    ),
+    # --- Alkaram Studio ---
+    (
+        "Alkaram Printed 3-Piece — Emerald",
+        "alkaram-printed-3pc-emerald",
+        "stitched",
+        "Alkaram Studio",
+        "Cambric",
+        "3-Piece (Stitched)",
+        "2693.00",
+        None,
+        "/1/0623/6481/1444/files/FW-105.1-25-1-Green-1.jpg?v=1760030739",
+        stitched_variants("ALK-EM", "Emerald", "#1F6B53"),
+    ),
+    (
+        "Alkaram Shirt & Trouser — Maroon",
+        "alkaram-shirt-trouser-maroon",
+        "stitched",
+        "Alkaram Studio",
+        "Cotton",
+        "2-Piece (Stitched)",
+        "2990.00",
+        "2392.00",
+        "/1/0623/6481/1444/files/EF23-26-Maroon-1_08b91fc2-207e-4819-8c3f-c3a35594e6f4.jpg?v=1768051105",
+        stitched_variants("ALK-MR", "Maroon", "#7B2D3A"),
+    ),
+    (
+        "Alkaram Embroidered 3-Piece — Peach",
+        "alkaram-embroidered-3pc-peach",
+        "lawn",
+        "Alkaram Studio",
+        "Lawn",
+        "3-Piece (Stitched)",
+        "4792.00",
+        None,
+        "/1/0623/6481/1444/files/EF01-26-Peach-1_6267bf0b-3d2d-4874-bdc6-99cb9b358dba.jpg?v=1768558509",
+        stitched_variants("ALK-PC", "Peach", "#E8B7A0"),
+    ),
+    (
+        "Alkaram Festive 3-Piece — Blush Pink",
+        "alkaram-festive-3pc-blush-pink",
+        "stitched",
+        "Alkaram Studio",
+        "Lawn",
+        "3-Piece (Stitched)",
+        "4392.00",
+        None,
+        "/1/0623/6481/1444/files/CAJ-11-26-Pink-1_0c95919a-36ce-4031-9fe1-e2f13b711cb2.jpg?v=1767860230",
+        stitched_variants("ALK-BP", "Blush Pink", "#E8A0BF"),
+    ),
+    (
+        "Alkaram Premium 3-Piece — Ivory",
+        "alkaram-premium-3pc-ivory",
+        "stitched",
+        "Alkaram Studio",
+        "Lawn",
+        "3-Piece (Stitched)",
+        "6594.00",
+        "5275.00",
+        "/1/0623/6481/1444/files/M-01-25-1-IVORY-1_bdd43873-27f7-46ba-93d3-0d15f39734e8.jpg?v=1740126916",
+        stitched_variants("ALK-IV", "Ivory", "#EDE6D6"),
+    ),
+    # --- Gul Ahmed ---
+    (
+        "Gul Ahmed Silver Star Unstitched Cotton",
+        "gul-ahmed-silver-star-unstitched-cotton",
         "unstitched",
         "Gul Ahmed",
-        "Lawn",
-        "3-Piece (Unstitched)",
-        "6200.00",
-        None,
-        ["photo-1490481651871-ab68de25d43d", "photo-1487412720507-e7ab37603c6f"],
-        [("GA-MD-FREE", "Unstitched", "Sage Green", "#6B7257", 18)],
-    ),
-    (
-        "Nishat Unstitched Khaddar — Terracotta",
-        "nishat-unstitched-khaddar-terracotta",
-        "unstitched",
-        "Nishat",
-        "Khaddar",
-        "2-Piece (Unstitched)",
-        "3900.00",
-        None,
-        ["photo-1539008835657-9e8e9680c956", "photo-1583744946564-b52ac1c389c8"],
-        [("NS-TC-FREE", "Unstitched", "Terracotta", "#B14A33", 22)],
-    ),
-    (
-        "Khaadi Stitched Kurta — Indigo Bloom",
-        "khaadi-stitched-kurta-indigo-bloom",
-        "stitched",
-        "Khaadi",
         "Cotton",
-        "1-Piece (Stitched)",
-        "3490.00",
+        "Unstitched",
+        "3699.00",
         None,
-        ["photo-1576566588028-4147f3842f27", "photo-1525507119028-ed4c629a60a3"],
-        [
-            ("KHD-IB-S", "S", "Indigo", "#3F51B5", 10),
-            ("KHD-IB-M", "M", "Indigo", "#3F51B5", 15),
-            ("KHD-IB-L", "L", "Indigo", "#3F51B5", 8),
-        ],
-    ),
-    (
-        "Khaadi Stitched Kameez — Midnight",
-        "khaadi-stitched-kameez-midnight",
-        "stitched",
-        "Khaadi",
-        "Khaddar",
-        "1-Piece (Stitched)",
-        "4200.00",
-        "3360.00",
-        ["photo-1551488831-00ddcb6c6bd3", "photo-1434389677669-e08b4cac3105"],
-        [
-            ("KHD-MN-S", "S", "Black", "#1C1B2A", 6),
-            ("KHD-MN-M", "M", "Black", "#1C1B2A", 9),
-            ("KHD-MN-L", "L", "Black", "#1C1B2A", 4),
-        ],
-    ),
-    (
-        "Alkaram Cambric Stitched Suit — Saffron",
-        "alkaram-cambric-stitched-suit-saffron",
-        "stitched",
-        "Alkaram",
-        "Cambric",
-        "2-Piece (Stitched)",
-        "5500.00",
-        None,
-        ["photo-1591047139829-d91aecb6caea", "photo-1567401893414-76b7b1e5a7a5"],
-        [
-            ("ALK-SF-S", "S", "Saffron", "#E4A010", 7),
-            ("ALK-SF-M", "M", "Saffron", "#E4A010", 11),
-            ("ALK-SF-L", "L", "Saffron", "#E4A010", 0),  # demo sold-out size
-            ("ALK-SF-XL", "XL", "Saffron", "#E4A010", 5),
-        ],
+        "/1/0706/3253/8159/files/silver-star-gs-unstitched-fabric-cotton-white-fullshot-front.jpg?v=1780144755",
+        unstitched_variant("GA-SS", "Off White", "#F2EDE2", 30),
     ),
 ]
 
@@ -187,7 +222,7 @@ async def seed() -> None:
             pieces,
             base,
             sale,
-            photos,
+            image_path,
             variants,
         ) in PRODUCTS:
             db.add(
@@ -195,8 +230,8 @@ async def seed() -> None:
                     name=name,
                     slug=slug,
                     description=(
-                        f"{name} by {brand}. Crafted from premium {fabric.lower()} "
-                        f"— {pieces.lower()}. Cash on delivery available nationwide."
+                        f"{name} by {brand}. Premium {fabric.lower()} — "
+                        f"{pieces.lower()}. Cash on delivery available nationwide."
                     ),
                     category_id=categories[cat_key].id,
                     brand=brand,
@@ -205,19 +240,8 @@ async def seed() -> None:
                     base_price=Decimal(base),
                     sale_price=Decimal(sale) if sale else None,
                     is_published=True,
-                    images=[
-                        img(pid, name, i) for i, pid in enumerate(photos)
-                    ],
-                    variants=[
-                        ProductVariant(
-                            sku=sku,
-                            size=size,
-                            color=color,
-                            color_hex=hex_,
-                            stock_qty=stock,
-                        )
-                        for (sku, size, color, hex_, stock) in variants
-                    ],
+                    images=[ProductImage(url=f"{CDN}{image_path}", alt=name, sort_order=0)],
+                    variants=variants,
                 )
             )
 
