@@ -74,7 +74,7 @@ Storefront runs at `http://localhost:3000`.
 Built in phases (see the plan). Each phase ends in a runnable state.
 
 - [x] **Phase 0** — Scaffolding: backend + frontend wired up, health check passing end-to-end
-- [ ] **Phase 1** — Backend foundation: models, migrations, auth (JWT + roles), seed data
+- [x] **Phase 1** — Backend foundation: models, migrations, auth (JWT + roles), seed data
 - [ ] **Phase 2** — Catalog API + storefront browse (home, category, product detail)
 - [ ] **Phase 3** — Cart + COD checkout + orders
 - [ ] **Phase 4** — Customer accounts (order history, addresses)

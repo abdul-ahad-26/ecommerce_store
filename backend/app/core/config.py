@@ -6,8 +6,13 @@ swapping the `.env` / platform env vars.
 """
 
 from functools import lru_cache
+from typing import Any
 
+from sqlalchemy.engine import make_url
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# libpq query params that asyncpg does not accept as connect kwargs.
+_LIBPQ_ONLY_PARAMS = {"sslmode", "channel_binding"}
 
 
 class Settings(BaseSettings):
@@ -23,6 +28,7 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     ENVIRONMENT: str = "development"  # development | production
     DEBUG: bool = True
+    SQL_ECHO: bool = False  # log every SQL statement (verbose; for debugging)
 
     # --- Database ---
     # SQLAlchemy async URL, e.g. postgresql+asyncpg://user:pass@host/db
@@ -51,6 +57,32 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+
+    @property
+    def sqlalchemy_url(self) -> str:
+        """DATABASE_URL with libpq-only query params removed.
+
+        Neon connection strings carry `?sslmode=require&channel_binding=require`,
+        which asyncpg rejects as keyword args. We strip them here and re-add SSL
+        via `db_connect_args` instead.
+        """
+        url = make_url(self.DATABASE_URL)
+        clean_query = {
+            k: v for k, v in url.query.items() if k not in _LIBPQ_ONLY_PARAMS
+        }
+        return url.set(query=clean_query).render_as_string(hide_password=False)
+
+    @property
+    def db_connect_args(self) -> dict[str, Any]:
+        """asyncpg connect args: enable SSL and disable the prepared-statement
+        cache (required for Neon's PgBouncer pooler)."""
+        if not self.DATABASE_URL.startswith("postgresql+asyncpg"):
+            return {}
+        url = make_url(self.DATABASE_URL)
+        args: dict[str, Any] = {"statement_cache_size": 0}
+        if url.query.get("sslmode", "require") != "disable":
+            args["ssl"] = True
+        return args
 
 
 @lru_cache
