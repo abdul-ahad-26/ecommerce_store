@@ -1,26 +1,129 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+  Meher — "Atelier Heritage" design system.
+  Palette drawn from natural textile dyes; editorial typography.
+*/
+
+@theme {
+  /* Colors */
+  --color-paper: #f6efe3; /* warm raw-cotton ground */
+  --color-paper-deep: #ece2d0; /* slightly deeper paper for panels */
+  --color-ink: #1c1b2a; /* deep indigo-black for type */
+  --color-ink-soft: #4a4860; /* muted ink for secondary text */
+  --color-madder: #b14a33; /* terracotta / madder-root red accent */
+  --color-madder-deep: #8f3826;
+  --color-gold: #c18f3c; /* marigold gold for fine rules */
+  --color-gold-soft: #d8b878;
+  --color-cream: #fbf7ef; /* near-white card surface */
+  --color-sage: #6b7257; /* muted leaf green (secondary accent) */
+
+  /* Fonts (CSS variables provided by next/font) */
+  --font-display: var(--font-display), Georgia, serif;
+  --font-body: var(--font-body), system-ui, sans-serif;
+  --font-urdu: var(--font-urdu), serif;
+
+  /* Easing */
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  body {
+    /* Subtle paper grain via layered radial noise. */
+    background-color: var(--color-paper);
+    background-image: radial-gradient(
+        circle at 1px 1px,
+        rgba(28, 27, 42, 0.035) 1px,
+        transparent 0
+      );
+    background-size: 4px 4px;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  ::selection {
+    background: var(--color-madder);
+    color: var(--color-cream);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.01em;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Magazine-style section eyebrow: "01 — The Collection" */
+  .eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-madder);
+  }
+
+  /* Thin gold rule used between sections */
+  .rule-gold {
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--color-gold) 12%,
+      var(--color-gold) 88%,
+      transparent
+    );
+  }
+
+  .urdu {
+    font-family: var(--font-urdu);
+    line-height: 2.2;
+  }
+
+  /* Primary "ink" button */
+  .btn-ink {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: var(--color-ink);
+    color: var(--color-cream);
+    padding: 0.85rem 1.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: background 0.3s var(--ease-out-soft),
+      transform 0.3s var(--ease-out-soft);
+  }
+  .btn-ink:hover {
+    background: var(--color-madder);
+    transform: translateY(-1px);
+  }
+}
+
+/* --- Load-in reveal animation (staggered via inline animation-delay) --- */
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal {
+  opacity: 0;
+  animation: reveal-up 0.9s var(--ease-out-soft) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    animation: none;
+    opacity: 1;
+  }
 }
