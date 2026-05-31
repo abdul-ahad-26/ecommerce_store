@@ -76,3 +76,7 @@ export function placeOrder(payload: CheckoutRequest): Promise<Order> {
 export function getOrder(orderNumber: string): Promise<Order> {
   return apiFetch<Order>(`/orders/${orderNumber}`);
 }
+
+export function listMyOrders(): Promise<OrderSummary[]> {
+  return apiFetch<OrderSummary[]>("/orders");
+}

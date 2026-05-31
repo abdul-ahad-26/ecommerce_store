@@ -13,6 +13,17 @@
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
+/**
+ * In-memory access token (client only). Set by the auth store on login/refresh.
+ * Never persisted — the refresh token lives in an httpOnly cookie and is used
+ * to mint a new access token on page load. On the server this stays null.
+ */
+let accessToken: string | null = null;
+
+export function setAccessToken(token: string | null): void {
+  accessToken = token;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -51,6 +62,7 @@ export async function apiFetch<T>(
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...headers,
     },
     ...rest,

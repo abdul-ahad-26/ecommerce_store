@@ -8,6 +8,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { selectSubtotal, useCart } from "@/store/cart";
 import { estimateShipping, placeOrder } from "@/lib/orders";
+import { listAddresses } from "@/lib/addresses";
+import { useAuth } from "@/store/auth";
 import { ApiError } from "@/lib/api";
 import { formatPKR } from "@/lib/format";
 import { SectionLabel } from "@/components/section-label";
@@ -44,6 +46,7 @@ export default function CheckoutPage() {
   const items = useCart((s) => s.items);
   const subtotal = useCart(selectSubtotal);
   const clear = useCart((s) => s.clear);
+  const user = useAuth((s) => s.user);
 
   const [mounted, setMounted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -52,11 +55,42 @@ export default function CheckoutPage() {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { shipping_province: "Punjab" },
   });
+
+  // Prefill from the logged-in user's profile + default saved address.
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    (async () => {
+      let addr = null;
+      try {
+        const list = await listAddresses();
+        addr = list.find((a) => a.is_default) ?? list[0] ?? null;
+      } catch {
+        /* no addresses yet — fall back to profile */
+      }
+      if (!active) return;
+      reset({
+        customer_name: addr?.recipient_name ?? user.full_name,
+        customer_phone: addr?.phone ?? user.phone ?? "",
+        customer_email: user.email,
+        shipping_line1: addr?.line1 ?? "",
+        shipping_line2: addr?.line2 ?? "",
+        shipping_city: addr?.city ?? "",
+        shipping_province: addr?.province ?? "Punjab",
+        shipping_postal_code: addr?.postal_code ?? "",
+        notes: "",
+      });
+    })();
+    return () => {
+      active = false;
+    };
+  }, [user, reset]);
 
   const shipping = estimateShipping(subtotal);
   const total = subtotal + shipping;
