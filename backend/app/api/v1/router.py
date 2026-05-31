@@ -7,6 +7,7 @@ from fastapi import APIRouter
 
 from app.api.v1 import (
     addresses,
+    admin,
     auth,
     categories,
     health,
@@ -21,3 +22,4 @@ api_router.include_router(categories.router)
 api_router.include_router(products.router)
 api_router.include_router(orders.router)
 api_router.include_router(addresses.router)
+api_router.include_router(admin.router)

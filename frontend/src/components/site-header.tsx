@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Category } from "@/lib/catalog";
 import { selectCount, useCart } from "@/store/cart";
+import { useAuth } from "@/store/auth";
 
 const STATIC_LINKS = [
   { href: "/shop", label: "Shop All" },
@@ -44,6 +45,7 @@ export function SiteHeader({ categories = [] }: { categories?: Category[] }) {
   // Cart count — guarded so SSR (0) and first client render match before
   // localStorage hydrates.
   const count = useCart(selectCount);
+  const isAdmin = useAuth((s) => s.user?.role === "admin");
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -104,6 +106,14 @@ export function SiteHeader({ categories = [] }: { categories?: Category[] }) {
 
           {/* Icons (right) */}
           <div className="flex flex-1 items-center justify-end gap-4">
+            {mounted && isAdmin && (
+              <Link
+                href="/admin"
+                className="hidden text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-madder hover:text-ink sm:inline"
+              >
+                Admin
+              </Link>
+            )}
             <Link
               href="/account"
               aria-label="Account"
