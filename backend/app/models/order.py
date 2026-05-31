@@ -90,6 +90,8 @@ class OrderItem(Base):
 
     # Snapshots so the order is readable regardless of catalog changes.
     product_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    product_slug: Mapped[str | None] = mapped_column(String(280))
+    image_url: Mapped[str | None] = mapped_column(String(500))
     variant_label: Mapped[str | None] = mapped_column(String(120))
     unit_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     qty: Mapped[int] = mapped_column(Integer, nullable=False)

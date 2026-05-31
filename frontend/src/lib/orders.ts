@@ -22,6 +22,8 @@ export interface CheckoutRequest {
 
 export interface OrderItem {
   product_name: string;
+  product_slug: string | null;
+  image_url: string | null;
   variant_label: string | null;
   unit_price: string;
   qty: number;

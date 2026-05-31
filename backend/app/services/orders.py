@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.models.order import Order, OrderItem
-from app.models.product import ProductVariant
+from app.models.product import Product, ProductVariant
 from app.models.user import User
 from app.schemas.order import CheckoutRequest
 
@@ -55,7 +55,11 @@ async def create_order(
     result = await db.execute(
         select(ProductVariant)
         .where(ProductVariant.id.in_(wanted.keys()))
-        .options(joinedload(ProductVariant.product, innerjoin=True))
+        .options(
+            joinedload(ProductVariant.product, innerjoin=True).selectinload(
+                Product.images
+            )
+        )
         .with_for_update(of=ProductVariant)
     )
     variants = {v.id: v for v in result.scalars().all()}
@@ -78,10 +82,13 @@ async def create_order(
         line_total = unit_price * qty
         subtotal += line_total
 
+        images = variant.product.images
         order_items.append(
             OrderItem(
                 variant_id=variant.id,
                 product_name=variant.product.name,
+                product_slug=variant.product.slug,
+                image_url=images[0].url if images else None,
                 variant_label=_variant_label(variant),
                 unit_price=unit_price,
                 qty=qty,

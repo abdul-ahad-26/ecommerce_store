@@ -1,31 +1,62 @@
-import type { Metadata } from "next";
+"use client";
+
+import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { use, useEffect, useState } from "react";
 import { getOrder, type Order } from "@/lib/orders";
+import { useAuth } from "@/store/auth";
 import { formatPKR } from "@/lib/format";
 import { Motif } from "@/components/motif";
 
-export const metadata: Metadata = {
-  title: "Order Confirmed",
-  robots: { index: false },
-};
+type View = "loading" | "ready" | "notfound";
 
-async function loadOrder(orderNumber: string): Promise<Order | null> {
-  try {
-    return await getOrder(orderNumber);
-  } catch {
-    return null;
-  }
-}
-
-export default async function OrderConfirmationPage({
+export default function OrderConfirmationPage({
   params,
 }: {
   params: Promise<{ order_number: string }>;
 }) {
-  const { order_number } = await params;
-  const order = await loadOrder(order_number);
-  if (!order) notFound();
+  const { order_number } = use(params);
+  // Wait until auth resolves so the access token (if any) is attached — needed
+  // for account-linked orders. Guest orders work with no token.
+  const authStatus = useAuth((s) => s.status);
+  const [order, setOrder] = useState<Order | null>(null);
+  const [view, setView] = useState<View>("loading");
+
+  useEffect(() => {
+    if (authStatus === "loading") return;
+    let active = true;
+    getOrder(order_number)
+      .then((o) => active && (setOrder(o), setView("ready")))
+      .catch(() => active && setView("notfound"));
+    return () => {
+      active = false;
+    };
+  }, [order_number, authStatus]);
+
+  if (view === "loading") {
+    return (
+      <div className="mx-auto flex min-h-[40vh] max-w-[760px] flex-col items-center justify-center px-6">
+        <Motif className="h-12 w-12 animate-pulse text-gold" />
+      </div>
+    );
+  }
+
+  if (view === "notfound" || !order) {
+    return (
+      <div className="mx-auto max-w-[760px] px-6 py-28 text-center">
+        <Motif className="mx-auto h-14 w-14 text-madder" />
+        <h1 className="mt-8 font-display text-4xl text-ink">
+          Order not found
+        </h1>
+        <p className="mt-3 text-ink-soft">
+          We couldn&apos;t find this order, or you don&apos;t have access to it.
+        </p>
+        <Link href="/" className="btn-ink mt-8">
+          Return Home
+        </Link>
+      </div>
+    );
+  }
 
   const placed = new Date(order.placed_at).toLocaleDateString("en-PK", {
     day: "numeric",
@@ -35,7 +66,6 @@ export default async function OrderConfirmationPage({
 
   return (
     <div className="mx-auto max-w-[760px] px-6 py-16">
-      {/* Confirmation header */}
       <div className="text-center">
         <Motif className="mx-auto h-14 w-14 text-gold" />
         <p className="eyebrow mt-6">Order Confirmed</p>
@@ -54,23 +84,56 @@ export default async function OrderConfirmationPage({
       {/* Items */}
       <div className="mt-12 border border-ink/10 bg-cream">
         <ul className="divide-y divide-ink/10">
-          {order.items.map((item, i) => (
-            <li key={i} className="flex items-center justify-between gap-4 px-6 py-4">
-              <div>
-                <p className="font-display text-lg text-ink">
-                  {item.product_name}
-                </p>
-                {item.variant_label && (
-                  <p className="text-xs uppercase tracking-[0.12em] text-ink-soft">
-                    {item.variant_label} · Qty {item.qty}
+          {order.items.map((item, i) => {
+            const body = (
+              <div className="flex items-center gap-4">
+                <div className="relative h-20 w-16 shrink-0 overflow-hidden bg-paper-deep">
+                  {item.image_url && (
+                    <Image
+                      src={item.image_url}
+                      alt={item.product_name}
+                      fill
+                      sizes="64px"
+                      className="object-cover"
+                    />
+                  )}
+                </div>
+                <div>
+                  <p className="font-display text-lg text-ink">
+                    {item.product_name}
                   </p>
-                )}
+                  {item.variant_label && (
+                    <p className="text-xs uppercase tracking-[0.12em] text-ink-soft">
+                      {item.variant_label} · Qty {item.qty}
+                    </p>
+                  )}
+                </div>
               </div>
-              <span className="shrink-0 text-sm font-medium text-ink">
-                {formatPKR(item.line_total)}
-              </span>
-            </li>
-          ))}
+            );
+            return (
+              <li
+                key={i}
+                className="flex items-center justify-between gap-4 px-6 py-4"
+              >
+                {item.product_slug ? (
+                  <Link
+                    href={`/product/${item.product_slug}`}
+                    className="group flex-1"
+                    title="View product"
+                  >
+                    <span className="block transition-opacity group-hover:opacity-70">
+                      {body}
+                    </span>
+                  </Link>
+                ) : (
+                  <div className="flex-1">{body}</div>
+                )}
+                <span className="shrink-0 text-sm font-medium text-ink">
+                  {formatPKR(item.line_total)}
+                </span>
+              </li>
+            );
+          })}
         </ul>
 
         <div className="space-y-2 border-t border-ink/10 px-6 py-5">
@@ -84,11 +147,15 @@ export default async function OrderConfirmationPage({
             }
           />
           <div className="rule-gold my-3" />
-          <Row label="Total (Cash on Delivery)" value={formatPKR(order.total)} strong />
+          <Row
+            label="Total (Cash on Delivery)"
+            value={formatPKR(order.total)}
+            strong
+          />
         </div>
       </div>
 
-      {/* Delivery details */}
+      {/* Delivery + payment */}
       <div className="mt-8 grid gap-6 sm:grid-cols-2">
         <Panel title="Delivering to">
           <p className="text-ink">{order.customer_name}</p>

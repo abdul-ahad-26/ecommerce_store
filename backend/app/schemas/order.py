@@ -31,6 +31,8 @@ class OrderItemResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     product_name: str
+    product_slug: str | None
+    image_url: str | None
     variant_label: str | None
     unit_price: Decimal
     qty: int
