@@ -39,12 +39,22 @@ const nastaliq = Noto_Nastaliq_Urdu({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  ),
   title: {
     default: "Meher — Pakistani Women's Wear",
     template: "%s · Meher",
   },
   description:
     "Meher (مہر) — premium Pakistani women's wear. Lawn, stitched & unstitched shalwar kameez. Cash on delivery across Pakistan.",
+  openGraph: {
+    title: "Meher — Pakistani Women's Wear",
+    description:
+      "Premium Pakistani women's wear — lawn, stitched & unstitched shalwar kameez. Cash on delivery across Pakistan.",
+    type: "website",
+    locale: "en_PK",
+  },
 };
 
 export default async function RootLayout({

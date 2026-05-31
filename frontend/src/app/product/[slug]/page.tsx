@@ -39,8 +39,34 @@ export default async function ProductPage({
   const product = await loadProduct(slug);
   if (!product) notFound();
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description ?? undefined,
+    image: product.images.map((i) => i.url),
+    brand: product.brand
+      ? { "@type": "Brand", name: product.brand }
+      : undefined,
+    category: product.category.name,
+    offers: {
+      "@type": "Offer",
+      url: `${siteUrl}/product/${product.slug}`,
+      priceCurrency: "PKR",
+      price: Number(product.price),
+      availability: product.in_stock
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
+    },
+  };
+
   return (
     <div className="mx-auto max-w-[1400px] px-6 py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Breadcrumb */}
       <nav className="mb-8 flex items-center gap-2 text-xs uppercase tracking-[0.14em] text-ink-soft">
         <Link href="/" className="hover:text-madder">

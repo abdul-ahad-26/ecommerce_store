@@ -79,11 +79,35 @@ Built in phases (see the plan). Each phase ends in a runnable state.
 - [x] **Phase 3** — Cart + COD checkout + orders
 - [x] **Phase 4** — Customer accounts (order history, addresses)
 - [x] **Phase 5** — Admin panel (products, categories, orders)
-- [ ] **Phase 6** — Polish, SEO, tests, deploy
+- [x] **Phase 6** — Polish, SEO (sitemap/robots/JSON-LD), error/loading states, Dockerfile, deploy config
 
-## Deployment (target)
+## SEO & resilience
 
-- **Database:** Neon (managed Postgres)
-- **Backend:** Railway / Render (long-running ASGI; run `alembic upgrade head` on deploy)
-- **Frontend:** Vercel (set `NEXT_PUBLIC_API_URL` to the deployed API)
-- In production set `COOKIE_SECURE=true`, `COOKIE_SAMESITE=none`, and lock `CORS_ORIGINS` to the Vercel domain.
+- `app/sitemap.ts` + `app/robots.ts` (dynamic; private routes disallowed)
+- Product pages emit `Product` JSON-LD for rich results; OG metadata + `metadataBase`
+- Global `loading.tsx` + `error.tsx` boundaries
+- Expired access tokens are refreshed-and-retried transparently (`apiFetch` 401 handler)
+
+## Deployment
+
+**1. Database — Neon** (already set up): copy the pooled connection string.
+
+**2. Backend — Railway or Render** (Docker, uses `backend/Dockerfile`):
+- New service from the repo, root directory `backend/`.
+- Env vars: `DATABASE_URL` (Neon, `postgresql+asyncpg://…`), `SECRET_KEY`,
+  `CORS_ORIGINS=https://<your-vercel-domain>`, `COOKIE_SECURE=true`,
+  `COOKIE_SAMESITE=none`, `ENVIRONMENT=production`, and (optional) Cloudinary keys.
+- The Docker `CMD` runs `alembic upgrade head` then starts uvicorn on `$PORT`.
+- After first deploy, seed once: `uv run python seed.py` (or via a one-off shell).
+
+**3. Frontend — Vercel**:
+- Import the repo, root directory `frontend/`.
+- Env vars: `NEXT_PUBLIC_API_URL=https://<backend-domain>/api/v1`,
+  `NEXT_PUBLIC_SITE_URL=https://<your-vercel-domain>`.
+
+**4. Cross-origin auth:** because the storefront and API are on different domains,
+the refresh cookie must be `SameSite=None; Secure` (set via env above), and
+`CORS_ORIGINS` must list the exact Vercel origin.
+
+**Production smoke test:** browse → add to cart → COD checkout → confirmation;
+register/login; admin login → edit a product → see it on the storefront.

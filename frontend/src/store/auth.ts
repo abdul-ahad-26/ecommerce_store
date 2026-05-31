@@ -7,7 +7,7 @@
  */
 
 import { create } from "zustand";
-import { setAccessToken } from "@/lib/api";
+import { setAccessToken, setRefreshHandler } from "@/lib/api";
 import * as authApi from "@/lib/auth";
 import type { AuthUser } from "@/lib/auth";
 
@@ -58,3 +58,17 @@ export const useAuth = create<AuthState>((set) => ({
     }
   },
 }));
+
+// Let apiFetch transparently refresh an expired access token and retry once.
+setRefreshHandler(async () => {
+  try {
+    const res = await authApi.refresh();
+    setAccessToken(res.access_token);
+    useAuth.setState({ status: "authenticated", user: res.user });
+    return res.access_token;
+  } catch {
+    setAccessToken(null);
+    useAuth.setState({ status: "unauthenticated", user: null });
+    return null;
+  }
+});

@@ -24,6 +24,18 @@ export function setAccessToken(token: string | null): void {
   accessToken = token;
 }
 
+/**
+ * Optional refresh handler. When a request 401s with a token present, apiFetch
+ * calls this once to mint a fresh access token, then retries. Registered by the
+ * auth store so api.ts stays free of auth imports (no cycle).
+ */
+type RefreshHandler = () => Promise<string | null>;
+let refreshHandler: RefreshHandler | null = null;
+
+export function setRefreshHandler(handler: RefreshHandler | null): void {
+  refreshHandler = handler;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -38,13 +50,15 @@ export class ApiError extends Error {
 type ApiFetchOptions = RequestInit & {
   /** Parsed and appended as a query string. */
   params?: Record<string, string | number | boolean | undefined | null>;
+  /** Internal: marks a request that has already retried after a refresh. */
+  _isRetry?: boolean;
 };
 
 export async function apiFetch<T>(
   path: string,
   options: ApiFetchOptions = {},
 ): Promise<T> {
-  const { params, headers, ...rest } = options;
+  const { params, headers, _isRetry, ...rest } = options;
 
   let url = `${API_BASE_URL}${path}`;
   if (params) {
@@ -67,6 +81,20 @@ export async function apiFetch<T>(
     },
     ...rest,
   });
+
+  // Access token likely expired — refresh once and retry transparently.
+  if (
+    res.status === 401 &&
+    accessToken &&
+    refreshHandler &&
+    !_isRetry &&
+    !path.startsWith("/auth/")
+  ) {
+    const newToken = await refreshHandler();
+    if (newToken) {
+      return apiFetch<T>(path, { ...options, _isRetry: true });
+    }
+  }
 
   // 204 No Content — nothing to parse.
   if (res.status === 204) return undefined as T;
