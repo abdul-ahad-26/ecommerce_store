@@ -76,7 +76,7 @@ Built in phases (see the plan). Each phase ends in a runnable state.
 - [x] **Phase 0** — Scaffolding: backend + frontend wired up, health check passing end-to-end
 - [x] **Phase 1** — Backend foundation: models, migrations, auth (JWT + roles), seed data
 - [x] **Phase 2** — Catalog API + storefront browse (home, category, product detail)
-- [ ] **Phase 3** — Cart + COD checkout + orders
+- [x] **Phase 3** — Cart + COD checkout + orders
 - [ ] **Phase 4** — Customer accounts (order history, addresses)
 - [ ] **Phase 5** — Admin panel (products, categories, orders)
 - [ ] **Phase 6** — Polish, SEO, tests, deploy

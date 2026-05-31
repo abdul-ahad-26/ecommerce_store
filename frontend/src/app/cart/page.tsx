@@ -117,15 +117,11 @@ export default function CartPage() {
               <span className="text-ink-soft">Calculated at checkout</span>
             </div>
             <div className="rule-gold my-5" />
-            <Link
-              href="/checkout"
-              className="btn-ink w-full"
-              aria-disabled
-            >
+            <Link href="/checkout" className="btn-ink w-full">
               Proceed to Checkout
             </Link>
             <p className="mt-3 text-center text-xs text-ink-soft">
-              Checkout &amp; Cash on Delivery arrive in the next release.
+              Cash on Delivery · Free shipping over {formatPKR(5000)}
             </p>
           </aside>
         </div>
