@@ -7,9 +7,12 @@ A full-stack e-commerce store for premium Pakistani women's wear — lawn, stitc
 > Editorial "Atelier Heritage" storefront · guest & account checkout · role-gated
 > admin panel · typed Python API · 44 automated tests.
 
-<!-- After deploying, fill these in: -->
-**🔗 Live demo:** _add Vercel URL_ &nbsp;·&nbsp; **🛠️ Admin demo:** _add URL_ `/admin`
+**🔗 Live demo:** https://ecommerce-store-sandy-zeta.vercel.app
+&nbsp;·&nbsp; **🛠️ Admin:** [`/admin`](https://ecommerce-store-sandy-zeta.vercel.app/admin)
 (`admin@store.pk` / `admin12345`)
+
+> ⏳ The API is on a free tier that sleeps when idle — the **first load may take
+> ~30–50s** to wake, then it's fast.
 
 <!-- Add 2–3 screenshots here after deploy:
 ![Home](docs/home.png)
