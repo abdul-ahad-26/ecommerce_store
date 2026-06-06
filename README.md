@@ -14,11 +14,11 @@ A full-stack e-commerce store for premium Pakistani women's wear — lawn, stitc
 > ⏳ The API is on a free tier that sleeps when idle — the **first load may take
 > ~30–50s** to wake, then it's fast.
 
-<!-- Add 2–3 screenshots here after deploy:
-![Home](docs/home.png)
-![Product](docs/product.png)
-![Admin](docs/admin.png)
--->
+### Screenshots
+
+| Home | Product | Shop |
+|---|---|---|
+| ![Home](docs/home.png) | ![Product](docs/product.png) | ![Shop](docs/shop.png) |
 
 ---
 
