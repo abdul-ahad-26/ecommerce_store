@@ -1,0 +1,20 @@
+# Pings the Render backend every ~10 minutes so its free tier never sleeps,
+# avoiding the cold-start delay for visitors. Free on public repos.
+name: Keep backend awake
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # every 10 minutes (GitHub may delay under load)
+  workflow_dispatch: {} # allows manual runs from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: |
+          echo "Pinging backend health…"
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 \
+            https://meher-api.onrender.com/api/v1/health)
+          echo "Health responded: $code"
+          test "$code" = "200"

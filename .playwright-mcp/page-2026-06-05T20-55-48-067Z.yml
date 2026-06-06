@@ -1,0 +1,127 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: مہر
+      - generic [ref=e6]: Cash on Delivery across Pakistan
+      - generic [ref=e7]: ·
+      - generic [ref=e8]: Free shipping over Rs 5,000
+    - generic [ref=e10]:
+      - navigation [ref=e11]:
+        - link "Shop All" [ref=e12] [cursor=pointer]:
+          - /url: /shop
+        - link "Lawn" [ref=e13] [cursor=pointer]:
+          - /url: /category/lawn
+        - link "Stitched" [ref=e14] [cursor=pointer]:
+          - /url: /category/stitched
+        - link "Unstitched" [ref=e15] [cursor=pointer]:
+          - /url: /category/unstitched
+      - link "Meher مہر" [ref=e16] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e17]: Meher
+        - generic [ref=e18]: مہر
+      - generic [ref=e19]:
+        - link "Account" [ref=e20] [cursor=pointer]:
+          - /url: /account
+          - img [ref=e21]
+        - link "Cart" [ref=e24] [cursor=pointer]:
+          - /url: /cart
+          - img [ref=e25]
+  - main [ref=e27]:
+    - generic [ref=e28]:
+      - navigation [ref=e29]:
+        - link "Home" [ref=e30] [cursor=pointer]:
+          - /url: /
+        - generic [ref=e31]: /
+        - link "Lawn" [ref=e32] [cursor=pointer]:
+          - /url: /category/lawn
+        - generic [ref=e33]: /
+        - generic [ref=e34]: Sana Safinaz Embroidered Luxury Lawn
+      - generic [ref=e35]:
+        - img "Sana Safinaz Embroidered Luxury Lawn" [ref=e38]
+        - generic [ref=e39]:
+          - paragraph [ref=e40]: Sana Safinaz
+          - heading "Sana Safinaz Embroidered Luxury Lawn" [level=1] [ref=e41]
+          - generic [ref=e42]:
+            - generic [ref=e43]: Rs 12,999
+            - generic [ref=e44]: Rs 15,199
+            - generic [ref=e45]: Sale
+          - paragraph [ref=e46]: 3-Piece (Stitched) · Lawn
+          - generic [ref=e48]:
+            - paragraph [ref=e49]:
+              - text: Colour
+              - generic [ref=e50]: — Ivory
+            - button "Ivory" [ref=e52]
+          - generic [ref=e53]:
+            - paragraph [ref=e54]: Size
+            - generic [ref=e55]:
+              - button "M" [active] [ref=e56]
+              - button "L" [ref=e57]
+              - button "XL" [ref=e58]
+              - button "S" [ref=e59]
+          - generic [ref=e60]:
+            - generic [ref=e61]:
+              - button "Decrease quantity" [ref=e62]: −
+              - generic [ref=e63]: "1"
+              - button "Increase quantity" [ref=e64]: +
+            - button "Add to Bag" [ref=e65]
+          - generic [ref=e66]:
+            - paragraph [ref=e67]: Details
+            - paragraph [ref=e68]: Sana Safinaz Embroidered Luxury Lawn by Sana Safinaz. Premium lawn — 3-piece (stitched). Cash on delivery available nationwide.
+          - generic [ref=e69]:
+            - img [ref=e70]
+            - text: Cash on Delivery available nationwide
+  - contentinfo [ref=e74]:
+    - generic [ref=e75]:
+      - generic [ref=e76]:
+        - generic [ref=e77]:
+          - generic [ref=e78]:
+            - generic [ref=e79]: Meher
+            - generic [ref=e80]: مہر
+          - paragraph [ref=e81]: Premium Pakistani women's wear — lawn, stitched and unstitched shalwar kameez, crafted in the spirit of grace.
+          - img [ref=e82]
+        - generic [ref=e86]:
+          - heading "Shop" [level=4] [ref=e87]
+          - list [ref=e88]:
+            - listitem [ref=e89]:
+              - link "All Pieces" [ref=e90] [cursor=pointer]:
+                - /url: /shop
+            - listitem [ref=e91]:
+              - link "Lawn" [ref=e92] [cursor=pointer]:
+                - /url: /category/lawn
+            - listitem [ref=e93]:
+              - link "Stitched" [ref=e94] [cursor=pointer]:
+                - /url: /category/stitched
+            - listitem [ref=e95]:
+              - link "Unstitched" [ref=e96] [cursor=pointer]:
+                - /url: /category/unstitched
+        - generic [ref=e97]:
+          - heading "Help" [level=4] [ref=e98]
+          - list [ref=e99]:
+            - listitem [ref=e100]:
+              - link "Shipping & COD" [ref=e101] [cursor=pointer]:
+                - /url: /shipping
+            - listitem [ref=e102]:
+              - link "Returns" [ref=e103] [cursor=pointer]:
+                - /url: /returns
+            - listitem [ref=e104]:
+              - link "Size Guide" [ref=e105] [cursor=pointer]:
+                - /url: /sizing
+            - listitem [ref=e106]:
+              - link "Contact" [ref=e107] [cursor=pointer]:
+                - /url: /contact
+        - generic [ref=e108]:
+          - heading "Account" [level=4] [ref=e109]
+          - list [ref=e110]:
+            - listitem [ref=e111]:
+              - link "My Orders" [ref=e112] [cursor=pointer]:
+                - /url: /account
+            - listitem [ref=e113]:
+              - link "Sign In" [ref=e114] [cursor=pointer]:
+                - /url: /login
+            - listitem [ref=e115]:
+              - link "Register" [ref=e116] [cursor=pointer]:
+                - /url: /register
+      - generic [ref=e118]:
+        - paragraph [ref=e119]: © 2026 Meher. Made in Pakistan.
+        - paragraph [ref=e120]: Cash on Delivery · Nationwide
+  - alert [ref=e121]

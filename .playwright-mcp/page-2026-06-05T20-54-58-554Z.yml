@@ -1,0 +1,222 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: مہر
+      - generic [ref=e6]: Cash on Delivery across Pakistan
+      - generic [ref=e7]: ·
+      - generic [ref=e8]: Free shipping over Rs 5,000
+    - generic [ref=e10]:
+      - navigation [ref=e11]:
+        - link "Shop All" [ref=e12] [cursor=pointer]:
+          - /url: /shop
+        - link "Lawn" [ref=e13] [cursor=pointer]:
+          - /url: /category/lawn
+        - link "Stitched" [ref=e14] [cursor=pointer]:
+          - /url: /category/stitched
+        - link "Unstitched" [ref=e15] [cursor=pointer]:
+          - /url: /category/unstitched
+      - link "Meher مہر" [ref=e16] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e17]: Meher
+        - generic [ref=e18]: مہر
+      - generic [ref=e19]:
+        - link "Account" [ref=e20] [cursor=pointer]:
+          - /url: /account
+          - img [ref=e21]
+        - link "Cart" [ref=e24] [cursor=pointer]:
+          - /url: /cart
+          - img [ref=e25]
+  - main [ref=e27]:
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e31]:
+          - generic [ref=e32]: —
+          - generic [ref=e34]: Spring / Summer Edit
+        - heading "Grace, woven into every thread." [level=1] [ref=e35]:
+          - text: Grace, woven
+          - text: into every thread.
+        - paragraph [ref=e36]: Lawn, stitched and unstitched shalwar kameez for the modern Pakistani woman — crafted with heritage, delivered to your door.
+        - generic [ref=e37]:
+          - link "Explore the Collection" [ref=e38] [cursor=pointer]:
+            - /url: /shop
+          - generic [ref=e39]: مہر
+      - generic [ref=e40]:
+        - img "Featured piece from the collection" [ref=e41]
+        - generic [ref=e42]: New In
+    - generic [ref=e45]:
+      - generic [ref=e46]:
+        - generic [ref=e47]: "01"
+        - generic [ref=e49]: The Collections
+      - generic [ref=e50]:
+        - link "Lawn Breathable everyday elegance Shop now →" [ref=e51] [cursor=pointer]:
+          - /url: /category/lawn
+          - img [ref=e52]
+          - generic [ref=e56]:
+            - heading "Lawn" [level=3] [ref=e57]
+            - paragraph [ref=e58]: Breathable everyday elegance
+            - generic [ref=e59]: Shop now →
+        - link "Stitched Ready to wear, ready to shine Shop now →" [ref=e60] [cursor=pointer]:
+          - /url: /category/stitched
+          - img [ref=e61]
+          - generic [ref=e65]:
+            - heading "Stitched" [level=3] [ref=e66]
+            - paragraph [ref=e67]: Ready to wear, ready to shine
+            - generic [ref=e68]: Shop now →
+        - link "Unstitched Tailored to your story Shop now →" [ref=e69] [cursor=pointer]:
+          - /url: /category/unstitched
+          - img [ref=e70]
+          - generic [ref=e74]:
+            - heading "Unstitched" [level=3] [ref=e75]
+            - paragraph [ref=e76]: Tailored to your story
+            - generic [ref=e77]: Shop now →
+    - generic [ref=e78]:
+      - generic [ref=e79]:
+        - generic [ref=e80]:
+          - generic [ref=e81]: "02"
+          - generic [ref=e83]: New Arrivals
+        - link "View all →" [ref=e84] [cursor=pointer]:
+          - /url: /shop
+      - generic [ref=e86]:
+        - link "Alkaram Embroidered 3-Piece — Peach View Piece Alkaram Studio Alkaram Embroidered 3-Piece — Peach Rs 4,792" [ref=e88] [cursor=pointer]:
+          - /url: /product/alkaram-embroidered-3pc-peach
+          - generic [ref=e89]:
+            - img "Alkaram Embroidered 3-Piece — Peach" [ref=e90]
+            - generic: View Piece
+          - generic [ref=e91]:
+            - paragraph [ref=e92]: Alkaram Studio
+            - heading "Alkaram Embroidered 3-Piece — Peach" [level=3] [ref=e93]
+            - generic [ref=e95]: Rs 4,792
+        - link "Sana Safinaz Embroidered Luxury Lawn Sale View Piece Sana Safinaz Sana Safinaz Embroidered Luxury Lawn Rs 12,999 Rs 15,199" [ref=e97] [cursor=pointer]:
+          - /url: /product/sana-safinaz-embroidered-luxury-lawn
+          - generic [ref=e98]:
+            - img "Sana Safinaz Embroidered Luxury Lawn" [ref=e99]
+            - generic [ref=e100]: Sale
+            - generic: View Piece
+          - generic [ref=e101]:
+            - paragraph [ref=e102]: Sana Safinaz
+            - heading "Sana Safinaz Embroidered Luxury Lawn" [level=3] [ref=e103]
+            - generic [ref=e104]:
+              - generic [ref=e105]: Rs 12,999
+              - generic [ref=e106]: Rs 15,199
+        - link "Alkaram Premium 3-Piece — Ivory Sale View Piece Alkaram Studio Alkaram Premium 3-Piece — Ivory Rs 5,275 Rs 6,594" [ref=e108] [cursor=pointer]:
+          - /url: /product/alkaram-premium-3pc-ivory
+          - generic [ref=e109]:
+            - img "Alkaram Premium 3-Piece — Ivory" [ref=e110]
+            - generic [ref=e111]: Sale
+            - generic: View Piece
+          - generic [ref=e112]:
+            - paragraph [ref=e113]: Alkaram Studio
+            - heading "Alkaram Premium 3-Piece — Ivory" [level=3] [ref=e114]
+            - generic [ref=e115]:
+              - generic [ref=e116]: Rs 5,275
+              - generic [ref=e117]: Rs 6,594
+        - link "Alkaram Festive 3-Piece — Blush Pink View Piece Alkaram Studio Alkaram Festive 3-Piece — Blush Pink Rs 4,392" [ref=e119] [cursor=pointer]:
+          - /url: /product/alkaram-festive-3pc-blush-pink
+          - generic [ref=e120]:
+            - img "Alkaram Festive 3-Piece — Blush Pink" [ref=e121]
+            - generic: View Piece
+          - generic [ref=e122]:
+            - paragraph [ref=e123]: Alkaram Studio
+            - heading "Alkaram Festive 3-Piece — Blush Pink" [level=3] [ref=e124]
+            - generic [ref=e126]: Rs 4,392
+        - link "Alkaram Shirt & Trouser — Maroon Sale View Piece Alkaram Studio Alkaram Shirt & Trouser — Maroon Rs 2,392 Rs 2,990" [ref=e128] [cursor=pointer]:
+          - /url: /product/alkaram-shirt-trouser-maroon
+          - generic [ref=e129]:
+            - img "Alkaram Shirt & Trouser — Maroon" [ref=e130]
+            - generic [ref=e131]: Sale
+            - generic: View Piece
+          - generic [ref=e132]:
+            - paragraph [ref=e133]: Alkaram Studio
+            - heading "Alkaram Shirt & Trouser — Maroon" [level=3] [ref=e134]
+            - generic [ref=e135]:
+              - generic [ref=e136]: Rs 2,392
+              - generic [ref=e137]: Rs 2,990
+        - link "Alkaram Printed 3-Piece — Emerald View Piece Alkaram Studio Alkaram Printed 3-Piece — Emerald Rs 2,693" [ref=e139] [cursor=pointer]:
+          - /url: /product/alkaram-printed-3pc-emerald
+          - generic [ref=e140]:
+            - img "Alkaram Printed 3-Piece — Emerald" [ref=e141]
+            - generic: View Piece
+          - generic [ref=e142]:
+            - paragraph [ref=e143]: Alkaram Studio
+            - heading "Alkaram Printed 3-Piece — Emerald" [level=3] [ref=e144]
+            - generic [ref=e146]: Rs 2,693
+        - link "Sana Safinaz Printed Khaddar — Shirt & Culotte View Piece Sana Safinaz Sana Safinaz Printed Khaddar — Shirt & Culotte Rs 5,899" [ref=e148] [cursor=pointer]:
+          - /url: /product/sana-safinaz-printed-khaddar-shirt-culotte
+          - generic [ref=e149]:
+            - img "Sana Safinaz Printed Khaddar — Shirt & Culotte" [ref=e150]
+            - generic: View Piece
+          - generic [ref=e151]:
+            - paragraph [ref=e152]: Sana Safinaz
+            - heading "Sana Safinaz Printed Khaddar — Shirt & Culotte" [level=3] [ref=e153]
+            - generic [ref=e155]: Rs 5,899
+        - link "Gul Ahmed Silver Star Unstitched Cotton View Piece Gul Ahmed Gul Ahmed Silver Star Unstitched Cotton Rs 3,699" [ref=e157] [cursor=pointer]:
+          - /url: /product/gul-ahmed-silver-star-unstitched-cotton
+          - generic [ref=e158]:
+            - img "Gul Ahmed Silver Star Unstitched Cotton" [ref=e159]
+            - generic: View Piece
+          - generic [ref=e160]:
+            - paragraph [ref=e161]: Gul Ahmed
+            - heading "Gul Ahmed Silver Star Unstitched Cotton" [level=3] [ref=e162]
+            - generic [ref=e164]: Rs 3,699
+    - generic [ref=e166]:
+      - generic [ref=e167]:
+        - img [ref=e168]
+        - generic [ref=e172]: مہر
+      - generic [ref=e173]:
+        - paragraph [ref=e174]: 03 — The Craft
+        - paragraph [ref=e175]: Every piece carries the quiet artistry of Pakistani textile — block prints, fine embroidery, and fabric that breathes.
+  - contentinfo [ref=e176]:
+    - generic [ref=e177]:
+      - generic [ref=e178]:
+        - generic [ref=e179]:
+          - generic [ref=e180]:
+            - generic [ref=e181]: Meher
+            - generic [ref=e182]: مہر
+          - paragraph [ref=e183]: Premium Pakistani women's wear — lawn, stitched and unstitched shalwar kameez, crafted in the spirit of grace.
+          - img [ref=e184]
+        - generic [ref=e188]:
+          - heading "Shop" [level=4] [ref=e189]
+          - list [ref=e190]:
+            - listitem [ref=e191]:
+              - link "All Pieces" [ref=e192] [cursor=pointer]:
+                - /url: /shop
+            - listitem [ref=e193]:
+              - link "Lawn" [ref=e194] [cursor=pointer]:
+                - /url: /category/lawn
+            - listitem [ref=e195]:
+              - link "Stitched" [ref=e196] [cursor=pointer]:
+                - /url: /category/stitched
+            - listitem [ref=e197]:
+              - link "Unstitched" [ref=e198] [cursor=pointer]:
+                - /url: /category/unstitched
+        - generic [ref=e199]:
+          - heading "Help" [level=4] [ref=e200]
+          - list [ref=e201]:
+            - listitem [ref=e202]:
+              - link "Shipping & COD" [ref=e203] [cursor=pointer]:
+                - /url: /shipping
+            - listitem [ref=e204]:
+              - link "Returns" [ref=e205] [cursor=pointer]:
+                - /url: /returns
+            - listitem [ref=e206]:
+              - link "Size Guide" [ref=e207] [cursor=pointer]:
+                - /url: /sizing
+            - listitem [ref=e208]:
+              - link "Contact" [ref=e209] [cursor=pointer]:
+                - /url: /contact
+        - generic [ref=e210]:
+          - heading "Account" [level=4] [ref=e211]
+          - list [ref=e212]:
+            - listitem [ref=e213]:
+              - link "My Orders" [ref=e214] [cursor=pointer]:
+                - /url: /account
+            - listitem [ref=e215]:
+              - link "Sign In" [ref=e216] [cursor=pointer]:
+                - /url: /login
+            - listitem [ref=e217]:
+              - link "Register" [ref=e218] [cursor=pointer]:
+                - /url: /register
+      - generic [ref=e220]:
+        - paragraph [ref=e221]: © 2026 Meher. Made in Pakistan.
+        - paragraph [ref=e222]: Cash on Delivery · Nationwide
+  - alert [ref=e223]

@@ -1,0 +1,156 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: مہر
+      - generic [ref=e6]: Cash on Delivery across Pakistan
+      - generic [ref=e7]: ·
+      - generic [ref=e8]: Free shipping over Rs 5,000
+    - generic [ref=e10]:
+      - navigation [ref=e11]:
+        - link "Shop All" [ref=e12] [cursor=pointer]:
+          - /url: /shop
+        - link "Lawn" [ref=e13] [cursor=pointer]:
+          - /url: /category/lawn
+        - link "Stitched" [ref=e14] [cursor=pointer]:
+          - /url: /category/stitched
+        - link "Unstitched" [ref=e15] [cursor=pointer]:
+          - /url: /category/unstitched
+      - link "Meher مہر" [ref=e16] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e17]: Meher
+        - generic [ref=e18]: مہر
+      - generic [ref=e19]:
+        - link "Account" [ref=e20] [cursor=pointer]:
+          - /url: /account
+          - img [ref=e21]
+        - link "Cart" [ref=e24] [cursor=pointer]:
+          - /url: /cart
+          - img [ref=e25]
+          - generic [ref=e27]: "1"
+  - main [ref=e28]:
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - generic [ref=e31]: —
+        - generic [ref=e33]: Checkout
+      - heading "Complete your order" [level=1] [ref=e34]
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - group "Contact" [ref=e37]:
+            - generic [ref=e38]: Contact
+            - generic [ref=e39]:
+              - generic [ref=e40]: Full name
+              - textbox "Full name" [ref=e41]
+            - generic [ref=e42]:
+              - generic [ref=e43]:
+                - generic [ref=e44]: Phone
+                - textbox "Phone" [ref=e45]:
+                  - /placeholder: 03XX XXXXXXX
+              - generic [ref=e46]:
+                - generic [ref=e47]: Email (optional)
+                - textbox "Email (optional)" [ref=e48]
+          - group "Shipping address" [ref=e49]:
+            - generic [ref=e50]: Shipping address
+            - generic [ref=e51]:
+              - generic [ref=e52]: Address
+              - textbox "Address" [ref=e53]:
+                - /placeholder: House, street, area
+            - generic [ref=e54]:
+              - generic [ref=e55]: Apartment, landmark (optional)
+              - textbox "Apartment, landmark (optional)" [ref=e56]
+            - generic [ref=e57]:
+              - generic [ref=e58]:
+                - generic [ref=e59]: City
+                - textbox "City" [ref=e60]
+              - generic [ref=e61]:
+                - generic [ref=e62]: Province
+                - combobox "Province" [ref=e63]:
+                  - option "Punjab" [selected]
+                  - option "Sindh"
+                  - option "Khyber Pakhtunkhwa"
+                  - option "Balochistan"
+                  - option "Islamabad Capital Territory"
+                  - option "Gilgit-Baltistan"
+                  - option "Azad Kashmir"
+              - generic [ref=e64]:
+                - generic [ref=e65]: Postal code (optional)
+                - textbox "Postal code (optional)" [ref=e66]
+            - generic [ref=e67]:
+              - generic [ref=e68]: Order notes (optional)
+              - textbox "Order notes (optional)" [ref=e69]:
+                - /placeholder: Delivery instructions, preferred timing…
+        - complementary [ref=e70]:
+          - heading "Order Summary" [level=2] [ref=e71]
+          - list [ref=e72]:
+            - listitem [ref=e73]:
+              - generic [ref=e74]:
+                - text: Sana Safinaz Embroidered Luxury Lawn
+                - generic [ref=e75]: — M · Ivory
+                - generic [ref=e76]: × 1
+              - generic [ref=e77]: Rs 12,999
+          - generic [ref=e79]:
+            - generic [ref=e80]: Subtotal
+            - generic [ref=e81]: Rs 12,999
+          - generic [ref=e82]:
+            - generic [ref=e83]: Shipping
+            - generic [ref=e84]: Free
+          - generic [ref=e86]:
+            - generic [ref=e87]: Total
+            - generic [ref=e88]: Rs 12,999
+          - generic [ref=e89]: "Payment: Cash on Delivery"
+          - button "Place Order" [ref=e90]
+          - paragraph [ref=e91]: You'll pay in cash when your order is delivered.
+  - contentinfo [ref=e92]:
+    - generic [ref=e93]:
+      - generic [ref=e94]:
+        - generic [ref=e95]:
+          - generic [ref=e96]:
+            - generic [ref=e97]: Meher
+            - generic [ref=e98]: مہر
+          - paragraph [ref=e99]: Premium Pakistani women's wear — lawn, stitched and unstitched shalwar kameez, crafted in the spirit of grace.
+          - img [ref=e100]
+        - generic [ref=e104]:
+          - heading "Shop" [level=4] [ref=e105]
+          - list [ref=e106]:
+            - listitem [ref=e107]:
+              - link "All Pieces" [ref=e108] [cursor=pointer]:
+                - /url: /shop
+            - listitem [ref=e109]:
+              - link "Lawn" [ref=e110] [cursor=pointer]:
+                - /url: /category/lawn
+            - listitem [ref=e111]:
+              - link "Stitched" [ref=e112] [cursor=pointer]:
+                - /url: /category/stitched
+            - listitem [ref=e113]:
+              - link "Unstitched" [ref=e114] [cursor=pointer]:
+                - /url: /category/unstitched
+        - generic [ref=e115]:
+          - heading "Help" [level=4] [ref=e116]
+          - list [ref=e117]:
+            - listitem [ref=e118]:
+              - link "Shipping & COD" [ref=e119] [cursor=pointer]:
+                - /url: /shipping
+            - listitem [ref=e120]:
+              - link "Returns" [ref=e121] [cursor=pointer]:
+                - /url: /returns
+            - listitem [ref=e122]:
+              - link "Size Guide" [ref=e123] [cursor=pointer]:
+                - /url: /sizing
+            - listitem [ref=e124]:
+              - link "Contact" [ref=e125] [cursor=pointer]:
+                - /url: /contact
+        - generic [ref=e126]:
+          - heading "Account" [level=4] [ref=e127]
+          - list [ref=e128]:
+            - listitem [ref=e129]:
+              - link "My Orders" [ref=e130] [cursor=pointer]:
+                - /url: /account
+            - listitem [ref=e131]:
+              - link "Sign In" [ref=e132] [cursor=pointer]:
+                - /url: /login
+            - listitem [ref=e133]:
+              - link "Register" [ref=e134] [cursor=pointer]:
+                - /url: /register
+      - generic [ref=e136]:
+        - paragraph [ref=e137]: © 2026 Meher. Made in Pakistan.
+        - paragraph [ref=e138]: Cash on Delivery · Nationwide
+  - alert [ref=e139]
