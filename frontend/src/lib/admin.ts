@@ -83,6 +83,8 @@ export interface AdminProductsQuery {
   page_size?: number;
   q?: string;
   published?: boolean;
+  /** "in" = sellable, "low" = needs restock (≤ threshold), "out" = sold out. */
+  stock?: "in" | "low" | "out";
 }
 
 export interface PaginatedAdminOrders {

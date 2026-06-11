@@ -343,6 +343,39 @@ async def test_admin_products_pagination_and_filters(
     assert by_name["total"] == 1
 
 
+async def test_admin_products_stock_filter(
+    client: AsyncClient, admin_headers, category_id
+):
+    # healthy (10), low (2), out (0) — one product each.
+    for slug, qty in [("healthy", 10), ("low", 2), ("out", 0)]:
+        await client.post(
+            f"{API}/admin/products",
+            json=product_body(
+                category_id,
+                name=f"{slug} suit",
+                slug=slug,
+                variants=[{"sku": f"V-{slug}", "size": "S", "stock_qty": qty}],
+            ),
+            headers=admin_headers,
+        )
+
+    async def slugs_for(stock: str) -> set[str]:
+        res = await client.get(
+            f"{API}/admin/products?stock={stock}", headers=admin_headers
+        )
+        return {p["slug"] for p in res.json()["items"]}
+
+    assert await slugs_for("in") == {"healthy", "low"}
+    # "low" matches any variant at/below threshold — includes sold-out sizes.
+    assert await slugs_for("low") == {"low", "out"}
+    assert await slugs_for("out") == {"out"}
+
+    bad = await client.get(
+        f"{API}/admin/products?stock=nope", headers=admin_headers
+    )
+    assert bad.status_code == 422
+
+
 async def test_dashboard_stats(client: AsyncClient, admin_headers, category_id):
     await client.post(
         f"{API}/admin/products", json=product_body(category_id), headers=admin_headers

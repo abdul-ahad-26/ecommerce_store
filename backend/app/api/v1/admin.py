@@ -44,9 +44,10 @@ async def list_products(
     page_size: int = Query(default=20, ge=1, le=100),
     q: str | None = Query(default=None, max_length=120),
     published: bool | None = Query(default=None),
+    stock: str | None = Query(default=None, pattern="^(in|low|out)$"),
 ) -> dict:
     return await admin_service.list_admin_products(
-        db, page=page, page_size=page_size, q=q, published=published
+        db, page=page, page_size=page_size, q=q, published=published, stock=stock
     )
 
 

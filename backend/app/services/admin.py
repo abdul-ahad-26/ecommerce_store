@@ -35,14 +35,43 @@ async def list_admin_products(
     page_size: int = 20,
     q: str | None = None,
     published: bool | None = None,
+    stock: str | None = None,
 ) -> dict:
-    """Paginated + filtered product list for the admin table."""
+    """Paginated + filtered product list for the admin table.
+
+    `stock`: "in" (any variant sellable), "low" (any variant at or below the
+    dashboard's LOW_STOCK_THRESHOLD — includes sold-out sizes), "out" (nothing
+    sellable at all).
+    """
     filters = []
     if q:
         like = f"%{q}%"
         filters.append(Product.name.ilike(like) | Product.brand.ilike(like))
     if published is not None:
         filters.append(Product.is_published.is_(published))
+    if stock:
+        has_sellable = (
+            select(ProductVariant.id)
+            .where(
+                ProductVariant.product_id == Product.id,
+                ProductVariant.stock_qty > 0,
+            )
+            .exists()
+        )
+        has_low = (
+            select(ProductVariant.id)
+            .where(
+                ProductVariant.product_id == Product.id,
+                ProductVariant.stock_qty <= LOW_STOCK_THRESHOLD,
+            )
+            .exists()
+        )
+        if stock == "in":
+            filters.append(has_sellable)
+        elif stock == "low":
+            filters.append(has_low)
+        elif stock == "out":
+            filters.append(~has_sellable)
 
     total = (
         await db.scalar(

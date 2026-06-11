@@ -2,18 +2,32 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { deleteProduct, listAdminProducts } from "@/lib/admin";
+import {
+  deleteProduct,
+  listAdminProducts,
+  type AdminProductsQuery,
+} from "@/lib/admin";
 import { formatPKR } from "@/lib/format";
 
 const PAGE_SIZE = 20;
+const STOCK_OPTIONS = ["in", "low", "out"] as const;
+type StockFilter = AdminProductsQuery["stock"] | "all";
 
 export default function AdminProducts() {
   const qc = useQueryClient();
+  // ?stock=low deep-link (used by the dashboard's Low Stock card).
+  const initialStock = useSearchParams().get("stock");
   const [searchInput, setSearchInput] = useState("");
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // all | live | draft
+  const [stockFilter, setStockFilter] = useState<StockFilter>(
+    STOCK_OPTIONS.includes(initialStock as never)
+      ? (initialStock as StockFilter)
+      : "all",
+  );
   const [page, setPage] = useState(1);
 
   // Debounce the search box so each keystroke doesn't hit the server.
@@ -26,7 +40,11 @@ export default function AdminProducts() {
   }, [searchInput]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin", "products", { page, q, status: statusFilter }],
+    queryKey: [
+      "admin",
+      "products",
+      { page, q, status: statusFilter, stock: stockFilter },
+    ],
     queryFn: () =>
       listAdminProducts({
         page,
@@ -34,6 +52,7 @@ export default function AdminProducts() {
         q: q || undefined,
         published:
           statusFilter === "all" ? undefined : statusFilter === "live",
+        stock: stockFilter === "all" ? undefined : stockFilter,
       }),
     placeholderData: (prev) => prev,
   });
@@ -73,13 +92,26 @@ export default function AdminProducts() {
           <option value="live">Live</option>
           <option value="draft">Draft</option>
         </select>
+        <select
+          value={stockFilter}
+          onChange={(e) => {
+            setStockFilter(e.target.value as StockFilter);
+            setPage(1);
+          }}
+          className="border border-ink/20 bg-cream px-3 py-2 text-sm outline-none focus:border-madder"
+        >
+          <option value="all">All stock</option>
+          <option value="in">In stock</option>
+          <option value="low">Low stock</option>
+          <option value="out">Out of stock</option>
+        </select>
       </div>
 
       {isLoading || !data ? (
         <p className="mt-8 text-sm text-ink-soft">Loading…</p>
       ) : data.items.length === 0 ? (
         <p className="mt-8 text-sm text-ink-soft">
-          {q || statusFilter !== "all"
+          {q || statusFilter !== "all" || stockFilter !== "all"
             ? "No products match your filters."
             : "No products yet."}
         </p>

@@ -36,7 +36,7 @@ export default function AdminDashboard() {
       label: "Low Stock Variants",
       value: data.low_stock_variants,
       alert: data.low_stock_variants > 0,
-      href: "/admin/products",
+      href: "/admin/products?stock=low",
     },
   ];
 
