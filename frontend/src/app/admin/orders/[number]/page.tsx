@@ -71,7 +71,20 @@ export default function AdminOrderDetail() {
           <select
             value={order.status}
             disabled={statusMut.isPending}
-            onChange={(e) => statusMut.mutate(e.target.value)}
+            onChange={(e) => {
+              const status = e.target.value;
+              // Cancellation is destructive (stock isn't restored) — confirm.
+              if (
+                status === "cancelled" &&
+                !confirm(
+                  `Cancel order ${order.order_number}? Stock is not restored.`,
+                )
+              ) {
+                e.target.value = order.status;
+                return;
+              }
+              statusMut.mutate(status);
+            }}
             className="border border-ink/20 bg-cream px-3 py-2 text-sm capitalize outline-none focus:border-madder"
           >
             {ORDER_STATUSES.map((s) => (

@@ -29,13 +29,45 @@ async def get_admin_product(db: AsyncSession, product_id: int) -> Product | None
     )
 
 
-async def list_admin_products(db: AsyncSession) -> list[Product]:
+async def list_admin_products(
+    db: AsyncSession,
+    page: int = 1,
+    page_size: int = 20,
+    q: str | None = None,
+    published: bool | None = None,
+) -> dict:
+    """Paginated + filtered product list for the admin table."""
+    filters = []
+    if q:
+        like = f"%{q}%"
+        filters.append(Product.name.ilike(like) | Product.brand.ilike(like))
+    if published is not None:
+        filters.append(Product.is_published.is_(published))
+
+    total = (
+        await db.scalar(
+            select(func.count()).select_from(Product).where(*filters)
+        )
+        or 0
+    )
+    pages = max(1, -(-total // page_size))  # ceil division
+    page = min(max(1, page), pages)
+
     rows = await db.scalars(
         select(Product)
+        .where(*filters)
         .order_by(Product.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
         .options(selectinload(Product.images), selectinload(Product.variants))
     )
-    return list(rows.all())
+    return {
+        "items": list(rows.all()),
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "pages": pages,
+    }
 
 
 async def create_product(db: AsyncSession, payload: ProductWrite) -> Product:

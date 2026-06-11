@@ -70,6 +70,21 @@ export interface AdminOrderSummary {
   placed_at: string;
 }
 
+export interface PaginatedAdminProducts {
+  items: AdminProduct[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+}
+
+export interface AdminProductsQuery {
+  page?: number;
+  page_size?: number;
+  q?: string;
+  published?: boolean;
+}
+
 export interface PaginatedAdminOrders {
   items: AdminOrderSummary[];
   total: number;
@@ -148,8 +163,8 @@ export const ORDER_STATUSES = [
 export const getStats = () => apiFetch<DashboardStats>("/admin/stats");
 
 // --- Products ---
-export const listAdminProducts = () =>
-  apiFetch<AdminProduct[]>("/admin/products");
+export const listAdminProducts = (params: AdminProductsQuery = {}) =>
+  apiFetch<PaginatedAdminProducts>("/admin/products", { params: { ...params } });
 export const getAdminProduct = (id: number) =>
   apiFetch<AdminProduct>(`/admin/products/${id}`);
 export const createProduct = (payload: ProductWrite) =>

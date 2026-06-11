@@ -2,15 +2,40 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteProduct, listAdminProducts } from "@/lib/admin";
 import { formatPKR } from "@/lib/format";
 
+const PAGE_SIZE = 20;
+
 export default function AdminProducts() {
   const qc = useQueryClient();
+  const [searchInput, setSearchInput] = useState("");
+  const [q, setQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all"); // all | live | draft
+  const [page, setPage] = useState(1);
+
+  // Debounce the search box so each keystroke doesn't hit the server.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setQ(searchInput.trim());
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(id);
+  }, [searchInput]);
+
   const { data, isLoading } = useQuery({
-    queryKey: ["admin", "products"],
-    queryFn: listAdminProducts,
+    queryKey: ["admin", "products", { page, q, status: statusFilter }],
+    queryFn: () =>
+      listAdminProducts({
+        page,
+        page_size: PAGE_SIZE,
+        q: q || undefined,
+        published:
+          statusFilter === "all" ? undefined : statusFilter === "live",
+      }),
+    placeholderData: (prev) => prev,
   });
 
   const deleteMut = useMutation({
@@ -27,13 +52,42 @@ export default function AdminProducts() {
         </Link>
       </div>
 
+      {/* Filters (server-side) */}
+      <div className="mt-6 flex flex-wrap gap-3">
+        <input
+          type="search"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search name or brand"
+          className="min-w-60 flex-1 border border-ink/20 bg-cream px-3 py-2 text-sm outline-none focus:border-madder"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
+          className="border border-ink/20 bg-cream px-3 py-2 text-sm outline-none focus:border-madder"
+        >
+          <option value="all">All products</option>
+          <option value="live">Live</option>
+          <option value="draft">Draft</option>
+        </select>
+      </div>
+
       {isLoading || !data ? (
         <p className="mt-8 text-sm text-ink-soft">Loading…</p>
+      ) : data.items.length === 0 ? (
+        <p className="mt-8 text-sm text-ink-soft">
+          {q || statusFilter !== "all"
+            ? "No products match your filters."
+            : "No products yet."}
+        </p>
       ) : (
         <>
         {/* Mobile cards */}
         <ul className="mt-8 space-y-3 sm:hidden">
-          {data.map((p) => {
+          {data.items.map((p) => {
             const stock = p.variants.reduce((n, v) => n + v.stock_qty, 0);
             return (
               <li key={p.id} className="border border-ink/10 bg-cream p-4">
@@ -96,7 +150,7 @@ export default function AdminProducts() {
               </tr>
             </thead>
             <tbody className="divide-y divide-ink/10">
-              {data.map((p) => {
+              {data.items.map((p) => {
                 const stock = p.variants.reduce((n, v) => n + v.stock_qty, 0);
                 return (
                   <tr key={p.id}>
@@ -166,6 +220,31 @@ export default function AdminProducts() {
             </tbody>
           </table>
         </div>
+
+        {/* Pager */}
+        {data.pages > 1 && (
+          <div className="mt-8 flex items-center justify-between text-sm">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={data.page <= 1}
+              className="border border-ink/20 px-4 py-2 text-xs uppercase tracking-[0.12em] text-ink transition-colors hover:border-madder hover:text-madder disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              ‹ Prev
+            </button>
+            <span className="text-ink-soft">
+              Page {data.page} of {data.pages} · {data.total} products
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(data.pages, p + 1))}
+              disabled={data.page >= data.pages}
+              className="border border-ink/20 px-4 py-2 text-xs uppercase tracking-[0.12em] text-ink transition-colors hover:border-madder hover:text-madder disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Next ›
+            </button>
+          </div>
+        )}
         </>
       )}
     </div>

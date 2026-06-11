@@ -19,6 +19,7 @@ from app.schemas.admin import (
     DashboardStats,
     OrderStatusUpdate,
     PaginatedAdminOrders,
+    PaginatedAdminProducts,
     ProductWrite,
     UploadSignature,
 )
@@ -35,9 +36,18 @@ async def get_stats(db: DbSession, _: AdminUser) -> DashboardStats:
 
 
 # --- Products ---
-@router.get("/products", response_model=list[AdminProduct])
-async def list_products(db: DbSession, _: AdminUser) -> list[Product]:
-    return await admin_service.list_admin_products(db)
+@router.get("/products", response_model=PaginatedAdminProducts)
+async def list_products(
+    db: DbSession,
+    _: AdminUser,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    q: str | None = Query(default=None, max_length=120),
+    published: bool | None = Query(default=None),
+) -> dict:
+    return await admin_service.list_admin_products(
+        db, page=page, page_size=page_size, q=q, published=published
+    )
 
 
 @router.get("/products/{product_id}", response_model=AdminProduct)

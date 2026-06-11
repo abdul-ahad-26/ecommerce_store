@@ -110,7 +110,7 @@ async def test_unpublished_product_hidden_from_storefront(
     assert (await client.get(f"{API}/products/draft")).status_code == 404
     # but visible in admin list
     listing = await client.get(f"{API}/admin/products", headers=admin_headers)
-    slugs = {p["slug"] for p in listing.json()}
+    slugs = {p["slug"] for p in listing.json()["items"]}
     assert "draft" in slugs
 
 
@@ -302,6 +302,45 @@ async def test_admin_orders_pagination_and_filters(
         await client.get(f"{API}/admin/orders?status=pending", headers=admin_headers)
     ).json()
     assert pending["total"] == 2
+
+
+async def test_admin_products_pagination_and_filters(
+    client: AsyncClient, admin_headers, category_id
+):
+    for i in range(3):
+        await client.post(
+            f"{API}/admin/products",
+            json=product_body(
+                category_id,
+                name=f"Suit {i}",
+                slug=f"suit-{i}",
+                is_published=(i < 2),  # 2 live, 1 draft
+                variants=[{"sku": f"S{i}", "size": "S", "stock_qty": 1}],
+            ),
+            headers=admin_headers,
+        )
+
+    page1 = (
+        await client.get(
+            f"{API}/admin/products?page=1&page_size=2", headers=admin_headers
+        )
+    ).json()
+    assert page1["total"] == 3
+    assert page1["pages"] == 2
+    assert len(page1["items"]) == 2
+
+    drafts = (
+        await client.get(
+            f"{API}/admin/products?published=false", headers=admin_headers
+        )
+    ).json()
+    assert drafts["total"] == 1
+    assert drafts["items"][0]["slug"] == "suit-2"
+
+    by_name = (
+        await client.get(f"{API}/admin/products?q=suit 1", headers=admin_headers)
+    ).json()
+    assert by_name["total"] == 1
 
 
 async def test_dashboard_stats(client: AsyncClient, admin_headers, category_id):
