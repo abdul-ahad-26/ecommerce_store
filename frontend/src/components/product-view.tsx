@@ -7,6 +7,7 @@ import type { ProductDetail, ProductVariant } from "@/lib/catalog";
 import { formatPKR } from "@/lib/format";
 import { useCart } from "@/store/cart";
 import { Motif } from "./motif";
+import { ShareButton } from "./share-button";
 
 function variantLabel(v: ProductVariant): string {
   return [v.size, v.color].filter(Boolean).join(" · ");
@@ -117,12 +118,15 @@ export function ProductView({ product }: { product: ProductDetail }) {
 
       {/* Details */}
       <div className="lg:py-4">
-        {product.brand && (
-          <p className="eyebrow">{product.brand}</p>
-        )}
-        <h1 className="mt-3 font-display text-4xl leading-tight text-ink sm:text-5xl">
-          {product.name}
-        </h1>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            {product.brand && <p className="eyebrow">{product.brand}</p>}
+            <h1 className="mt-3 font-display text-4xl leading-tight text-ink sm:text-5xl">
+              {product.name}
+            </h1>
+          </div>
+          <ShareButton path={`/product/${product.slug}`} title={product.name} />
+        </div>
 
         <div className="mt-4 flex items-baseline gap-3">
           <span className="text-2xl font-medium text-ink">

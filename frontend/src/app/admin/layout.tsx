@@ -21,8 +21,14 @@ export default function AdminLayout({
   const pathname = usePathname();
   const status = useAuth((s) => s.status);
   const user = useAuth((s) => s.user);
+  const logout = useAuth((s) => s.logout);
 
   const isAdmin = status === "authenticated" && user?.role === "admin";
+
+  async function handleSignOut() {
+    await logout();
+    router.replace("/login");
+  }
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -43,13 +49,31 @@ export default function AdminLayout({
   return (
     <div className="mx-auto max-w-[1200px] px-6 py-10">
       <div className="flex items-center justify-between border-b border-ink/10 pb-5">
-        <div className="flex items-baseline gap-3">
+        <Link href="/admin" className="flex items-baseline gap-3">
           <span className="font-display text-2xl text-ink">Meher</span>
           <span className="eyebrow text-madder">Admin</span>
-        </div>
-        <Link href="/" className="text-xs uppercase tracking-[0.14em] text-ink-soft hover:text-madder">
-          View store →
         </Link>
+        {/* Visual hierarchy: muted identity → quiet nav link → explicit action */}
+        <div className="flex items-center gap-5">
+          {user?.full_name && (
+            <span className="hidden sm:inline text-sm text-ink-soft/70">
+              {user.full_name}
+            </span>
+          )}
+          <Link
+            href="/"
+            className="text-xs font-semibold uppercase tracking-[0.14em] text-ink hover:text-madder"
+          >
+            View store →
+          </Link>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="border border-ink/25 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-ink transition-colors hover:border-madder hover:text-madder"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
 
       <nav className="mt-5 flex flex-wrap gap-1">

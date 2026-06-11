@@ -20,6 +20,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (payload: authApi.RegisterPayload) => Promise<void>;
   logout: () => Promise<void>;
+  setUser: (user: AuthUser) => void;
 }
 
 export const useAuth = create<AuthState>((set) => ({
@@ -57,6 +58,8 @@ export const useAuth = create<AuthState>((set) => ({
       set({ status: "unauthenticated", user: null });
     }
   },
+
+  setUser: (user) => set({ user }),
 }));
 
 // Let apiFetch transparently refresh an expired access token and retry once.

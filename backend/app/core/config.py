@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change-me-in-production"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    PASSWORD_RESET_EXPIRE_MINUTES: int = 30
     JWT_ALGORITHM: str = "HS256"
 
     # Cookie settings for the refresh token (cross-site in prod).
@@ -53,6 +54,17 @@ class Settings(BaseSettings):
     CLOUDINARY_CLOUD_NAME: str = ""
     CLOUDINARY_API_KEY: str = ""
     CLOUDINARY_API_SECRET: str = ""
+
+    # --- Email (Resend) ---
+    # Transactional email for order confirmations + password resets. When
+    # RESEND_API_KEY is empty the sender no-ops (logs only), so local dev and
+    # tests run without any email account.
+    RESEND_API_KEY: str = ""
+    EMAIL_FROM: str = "Meher <onboarding@resend.dev>"
+    # Where new-order alerts go (the store owner). Empty = skip the alert.
+    ADMIN_NOTIFICATION_EMAIL: str = ""
+    # Public storefront base URL — used to build links inside emails.
+    FRONTEND_URL: str = "http://localhost:3000"
 
     @property
     def cors_origins_list(self) -> list[str]:

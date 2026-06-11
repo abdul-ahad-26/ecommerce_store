@@ -106,6 +106,24 @@ class AdminOrderSummary(BaseModel):
     placed_at: datetime
 
 
+class PaginatedAdminProducts(BaseModel):
+    items: list[AdminProduct]
+    total: int
+    page: int
+    page_size: int
+    pages: int
+
+
+class PaginatedAdminOrders(BaseModel):
+    """Mirror of the catalog's paginated shape, for the admin orders table."""
+
+    items: list[AdminOrderSummary]
+    total: int
+    page: int
+    page_size: int
+    pages: int
+
+
 # --- Dashboard ---
 class DashboardStats(BaseModel):
     total_orders: int

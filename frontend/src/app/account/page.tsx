@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/store/auth";
 import { OrderHistory } from "@/components/account/order-history";
 import { AddressBook } from "@/components/account/address-book";
+import { ProfileForm } from "@/components/account/profile-form";
 import { SectionLabel } from "@/components/section-label";
 
 export default function AccountPage() {
@@ -50,6 +51,11 @@ export default function AccountPage() {
       </div>
 
       <section className="mt-14">
+        <h2 className="eyebrow mb-6 text-ink">Profile</h2>
+        <ProfileForm />
+      </section>
+
+      <section className="mt-16">
         <h2 className="eyebrow mb-6 text-ink">Order History</h2>
         <OrderHistory />
       </section>

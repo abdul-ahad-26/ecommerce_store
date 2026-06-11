@@ -45,3 +45,43 @@ export function refresh(): Promise<AuthResponse> {
 export function logout(): Promise<void> {
   return apiFetch<void>("/auth/logout", { method: "POST" });
 }
+
+export function updateProfile(payload: {
+  full_name: string;
+  phone?: string | null;
+}): Promise<AuthUser> {
+  return apiFetch<AuthUser>("/auth/me", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  return apiFetch<void>("/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
+  });
+}
+
+export function forgotPassword(email: string): Promise<{ detail: string }> {
+  return apiFetch<{ detail: string }>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function resetPassword(
+  token: string,
+  newPassword: string,
+): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, new_password: newPassword }),
+  });
+}

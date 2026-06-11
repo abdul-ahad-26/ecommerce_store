@@ -70,6 +70,38 @@ export interface AdminOrderSummary {
   placed_at: string;
 }
 
+export interface PaginatedAdminProducts {
+  items: AdminProduct[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+}
+
+export interface AdminProductsQuery {
+  page?: number;
+  page_size?: number;
+  q?: string;
+  published?: boolean;
+  /** "in" = sellable, "low" = needs restock (≤ threshold), "out" = sold out. */
+  stock?: "in" | "low" | "out";
+}
+
+export interface PaginatedAdminOrders {
+  items: AdminOrderSummary[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+}
+
+export interface AdminOrdersQuery {
+  page?: number;
+  page_size?: number;
+  status?: string;
+  q?: string;
+}
+
 export interface DashboardStats {
   total_orders: number;
   pending_orders: number;
@@ -133,8 +165,8 @@ export const ORDER_STATUSES = [
 export const getStats = () => apiFetch<DashboardStats>("/admin/stats");
 
 // --- Products ---
-export const listAdminProducts = () =>
-  apiFetch<AdminProduct[]>("/admin/products");
+export const listAdminProducts = (params: AdminProductsQuery = {}) =>
+  apiFetch<PaginatedAdminProducts>("/admin/products", { params: { ...params } });
 export const getAdminProduct = (id: number) =>
   apiFetch<AdminProduct>(`/admin/products/${id}`);
 export const createProduct = (payload: ProductWrite) =>
@@ -165,8 +197,10 @@ export const deleteCategory = (id: number) =>
   apiFetch<void>(`/admin/categories/${id}`, { method: "DELETE" });
 
 // --- Orders ---
-export const listAdminOrders = () =>
-  apiFetch<AdminOrderSummary[]>("/admin/orders");
+// Server-side pagination + filters so search/status work across the full
+// order history, not just one page.
+export const listAdminOrders = (params: AdminOrdersQuery = {}) =>
+  apiFetch<PaginatedAdminOrders>("/admin/orders", { params: { ...params } });
 export const updateOrderStatus = (orderNumber: string, status: string) =>
   apiFetch<AdminOrderSummary>(`/admin/orders/${orderNumber}/status`, {
     method: "PATCH",

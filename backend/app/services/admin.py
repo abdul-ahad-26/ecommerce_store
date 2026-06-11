@@ -29,13 +29,74 @@ async def get_admin_product(db: AsyncSession, product_id: int) -> Product | None
     )
 
 
-async def list_admin_products(db: AsyncSession) -> list[Product]:
+async def list_admin_products(
+    db: AsyncSession,
+    page: int = 1,
+    page_size: int = 20,
+    q: str | None = None,
+    published: bool | None = None,
+    stock: str | None = None,
+) -> dict:
+    """Paginated + filtered product list for the admin table.
+
+    `stock`: "in" (any variant sellable), "low" (any variant at or below the
+    dashboard's LOW_STOCK_THRESHOLD — includes sold-out sizes), "out" (nothing
+    sellable at all).
+    """
+    filters = []
+    if q:
+        like = f"%{q}%"
+        filters.append(Product.name.ilike(like) | Product.brand.ilike(like))
+    if published is not None:
+        filters.append(Product.is_published.is_(published))
+    if stock:
+        has_sellable = (
+            select(ProductVariant.id)
+            .where(
+                ProductVariant.product_id == Product.id,
+                ProductVariant.stock_qty > 0,
+            )
+            .exists()
+        )
+        has_low = (
+            select(ProductVariant.id)
+            .where(
+                ProductVariant.product_id == Product.id,
+                ProductVariant.stock_qty <= LOW_STOCK_THRESHOLD,
+            )
+            .exists()
+        )
+        if stock == "in":
+            filters.append(has_sellable)
+        elif stock == "low":
+            filters.append(has_low)
+        elif stock == "out":
+            filters.append(~has_sellable)
+
+    total = (
+        await db.scalar(
+            select(func.count()).select_from(Product).where(*filters)
+        )
+        or 0
+    )
+    pages = max(1, -(-total // page_size))  # ceil division
+    page = min(max(1, page), pages)
+
     rows = await db.scalars(
         select(Product)
+        .where(*filters)
         .order_by(Product.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
         .options(selectinload(Product.images), selectinload(Product.variants))
     )
-    return list(rows.all())
+    return {
+        "items": list(rows.all()),
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "pages": pages,
+    }
 
 
 async def create_product(db: AsyncSession, payload: ProductWrite) -> Product:
@@ -187,13 +248,47 @@ async def dashboard_stats(db: AsyncSession) -> dict:
     }
 
 
-async def list_admin_orders(db: AsyncSession) -> list[AdminOrderSummary]:
+async def list_admin_orders(
+    db: AsyncSession,
+    page: int = 1,
+    page_size: int = 20,
+    status: str | None = None,
+    q: str | None = None,
+) -> dict:
+    """Paginated + filtered order list for the admin table.
+
+    Filters run server-side so they work across the whole order history, not
+    just the current page.
+    """
+    filters = []
+    if status:
+        filters.append(Order.status == status)
+    if q:
+        like = f"%{q}%"
+        filters.append(
+            Order.order_number.ilike(like)
+            | Order.customer_name.ilike(like)
+            | Order.customer_phone.ilike(like)
+        )
+
+    total = (
+        await db.scalar(
+            select(func.count()).select_from(Order).where(*filters)
+        )
+        or 0
+    )
+    pages = max(1, -(-total // page_size))  # ceil division
+    page = min(max(1, page), pages)
+
     rows = await db.scalars(
         select(Order)
+        .where(*filters)
         .order_by(Order.placed_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
         .options(selectinload(Order.items))
     )
-    return [
+    items = [
         AdminOrderSummary(
             order_number=o.order_number,
             customer_name=o.customer_name,
@@ -206,3 +301,10 @@ async def list_admin_orders(db: AsyncSession) -> list[AdminOrderSummary]:
         )
         for o in rows.all()
     ]
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "pages": pages,
+    }
