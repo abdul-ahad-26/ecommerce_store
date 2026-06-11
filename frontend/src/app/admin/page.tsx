@@ -9,6 +9,9 @@ export default function AdminDashboard() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "stats"],
     queryFn: getStats,
+    // New orders should surface while the dashboard sits open.
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
   });
 
   if (isLoading || !data) {
@@ -87,7 +90,7 @@ export default function AdminDashboard() {
             {data.recent_orders.map((o) => (
               <li key={o.order_number}>
                 <Link
-                  href={`/order/${o.order_number}`}
+                  href={`/admin/orders/${o.order_number}`}
                   className="flex items-center justify-between py-3 text-sm transition-colors hover:text-madder"
                 >
                   <span className="font-medium text-ink">{o.order_number}</span>

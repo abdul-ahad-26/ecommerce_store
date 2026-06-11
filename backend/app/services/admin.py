@@ -187,13 +187,47 @@ async def dashboard_stats(db: AsyncSession) -> dict:
     }
 
 
-async def list_admin_orders(db: AsyncSession) -> list[AdminOrderSummary]:
+async def list_admin_orders(
+    db: AsyncSession,
+    page: int = 1,
+    page_size: int = 20,
+    status: str | None = None,
+    q: str | None = None,
+) -> dict:
+    """Paginated + filtered order list for the admin table.
+
+    Filters run server-side so they work across the whole order history, not
+    just the current page.
+    """
+    filters = []
+    if status:
+        filters.append(Order.status == status)
+    if q:
+        like = f"%{q}%"
+        filters.append(
+            Order.order_number.ilike(like)
+            | Order.customer_name.ilike(like)
+            | Order.customer_phone.ilike(like)
+        )
+
+    total = (
+        await db.scalar(
+            select(func.count()).select_from(Order).where(*filters)
+        )
+        or 0
+    )
+    pages = max(1, -(-total // page_size))  # ceil division
+    page = min(max(1, page), pages)
+
     rows = await db.scalars(
         select(Order)
+        .where(*filters)
         .order_by(Order.placed_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
         .options(selectinload(Order.items))
     )
-    return [
+    items = [
         AdminOrderSummary(
             order_number=o.order_number,
             customer_name=o.customer_name,
@@ -206,3 +240,10 @@ async def list_admin_orders(db: AsyncSession) -> list[AdminOrderSummary]:
         )
         for o in rows.all()
     ]
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "pages": pages,
+    }

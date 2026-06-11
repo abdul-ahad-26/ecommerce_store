@@ -3,7 +3,7 @@
 import time
 
 import cloudinary.utils
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
@@ -18,6 +18,7 @@ from app.schemas.admin import (
     CategoryWrite,
     DashboardStats,
     OrderStatusUpdate,
+    PaginatedAdminOrders,
     ProductWrite,
     UploadSignature,
 )
@@ -140,9 +141,19 @@ async def delete_category(category_id: int, db: DbSession, _: AdminUser) -> None
 
 
 # --- Orders ---
-@router.get("/orders", response_model=list[AdminOrderSummary])
-async def list_orders(db: DbSession, _: AdminUser) -> list[AdminOrderSummary]:
-    return await admin_service.list_admin_orders(db)
+@router.get("/orders", response_model=PaginatedAdminOrders)
+async def list_orders(
+    db: DbSession,
+    _: AdminUser,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    status_filter: str | None = Query(default=None, alias="status"),
+    q: str | None = Query(default=None, max_length=120),
+) -> PaginatedAdminOrders:
+    result = await admin_service.list_admin_orders(
+        db, page=page, page_size=page_size, status=status_filter, q=q
+    )
+    return PaginatedAdminOrders(**result)
 
 
 @router.patch("/orders/{order_number}/status", response_model=AdminOrderSummary)

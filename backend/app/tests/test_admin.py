@@ -218,6 +218,92 @@ async def test_admin_order_status_update(
     assert res.json()["status"] == "shipped"
 
 
+async def _place_order(client: AsyncClient, variant_id: int, name: str, phone: str):
+    res = await client.post(
+        f"{API}/orders",
+        json={
+            "items": [{"variant_id": variant_id, "qty": 1}],
+            "customer_name": name,
+            "customer_phone": phone,
+            "shipping_line1": "House 1",
+            "shipping_city": "Lahore",
+            "shipping_province": "Punjab",
+        },
+    )
+    assert res.status_code == 201
+    return res.json()["order_number"]
+
+
+async def test_admin_orders_pagination_and_filters(
+    client: AsyncClient, admin_headers, category_id
+):
+    created = (
+        await client.post(
+            f"{API}/admin/products",
+            json=product_body(
+                category_id, variants=[{"sku": "NS-S", "size": "S", "stock_qty": 50}]
+            ),
+            headers=admin_headers,
+        )
+    ).json()
+    vid = created["variants"][0]["id"]
+
+    n1 = await _place_order(client, vid, "Ayesha Khan", "03001111111")
+    await _place_order(client, vid, "Sana Malik", "03002222222")
+    await _place_order(client, vid, "Hira Aslam", "03003333333")
+
+    # Pagination math: 3 orders, page_size 2 → 2 pages.
+    page1 = (
+        await client.get(
+            f"{API}/admin/orders?page=1&page_size=2", headers=admin_headers
+        )
+    ).json()
+    assert page1["total"] == 3
+    assert page1["pages"] == 2
+    assert len(page1["items"]) == 2
+    page2 = (
+        await client.get(
+            f"{API}/admin/orders?page=2&page_size=2", headers=admin_headers
+        )
+    ).json()
+    assert len(page2["items"]) == 1
+
+    # Out-of-range page clamps instead of returning nothing.
+    clamped = (
+        await client.get(
+            f"{API}/admin/orders?page=99&page_size=2", headers=admin_headers
+        )
+    ).json()
+    assert clamped["page"] == 2
+
+    # Search by customer name and by phone fragment.
+    by_name = (
+        await client.get(f"{API}/admin/orders?q=sana", headers=admin_headers)
+    ).json()
+    assert by_name["total"] == 1
+    assert by_name["items"][0]["customer_name"] == "Sana Malik"
+    by_phone = (
+        await client.get(f"{API}/admin/orders?q=0300333", headers=admin_headers)
+    ).json()
+    assert by_phone["total"] == 1
+
+    # Status filter.
+    await client.patch(
+        f"{API}/admin/orders/{n1}/status",
+        json={"status": "shipped"},
+        headers=admin_headers,
+    )
+    shipped = (
+        await client.get(f"{API}/admin/orders?status=shipped", headers=admin_headers)
+    ).json()
+    assert shipped["total"] == 1
+    assert shipped["items"][0]["order_number"] == n1
+    pending = (
+        await client.get(f"{API}/admin/orders?status=pending", headers=admin_headers)
+    ).json()
+    assert pending["total"] == 2
+
+
 async def test_dashboard_stats(client: AsyncClient, admin_headers, category_id):
     await client.post(
         f"{API}/admin/products", json=product_body(category_id), headers=admin_headers

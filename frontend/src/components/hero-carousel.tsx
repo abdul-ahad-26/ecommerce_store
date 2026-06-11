@@ -8,6 +8,8 @@ export interface HeroSlide {
   image: string;
   name: string;
   slug: string;
+  /** Pre-formatted price, e.g. "Rs 12,999". */
+  price: string;
 }
 
 const INTERVAL = 5000;
@@ -49,7 +51,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           href={`/product/${slide.slug}`}
           aria-hidden={i !== index}
           tabIndex={i === index ? 0 : -1}
-          className="absolute inset-0 transition-opacity duration-700"
+          className="group absolute inset-0 transition-opacity duration-700"
           style={{ opacity: i === index ? 1 : 0 }}
         >
           <Image
@@ -60,11 +62,21 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
             sizes="(max-width: 768px) 100vw, 40vw"
             className="object-cover"
           />
+          {/* Editorial caption — turns a catalog still into a curated look. */}
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/75 via-ink/30 to-transparent px-5 pb-5 pt-16">
+            <p className="text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-gold-soft">
+              Shop this look →
+            </p>
+            <p className="mt-1 line-clamp-1 font-display text-xl text-cream">
+              {slide.name}
+            </p>
+            <p className="mt-0.5 text-sm text-cream/85">{slide.price}</p>
+          </div>
         </Link>
       ))}
 
       <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-ink/10" />
-      <span className="absolute bottom-4 left-4 bg-paper/85 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-ink backdrop-blur">
+      <span className="absolute left-4 top-4 bg-paper/85 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-ink backdrop-blur">
         New In
       </span>
 
@@ -95,7 +107,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                 aria-label={`Go to slide ${i + 1}`}
                 aria-current={i === index}
                 className={`h-1.5 rounded-full transition-all ${
-                  i === index ? "w-5 bg-ink" : "w-1.5 bg-ink/40"
+                  i === index ? "w-5 bg-cream" : "w-1.5 bg-cream/50"
                 }`}
               />
             ))}

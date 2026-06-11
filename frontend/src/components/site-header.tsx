@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import type { Category } from "@/lib/catalog";
 import { selectCount, useCart } from "@/store/cart";
 import { useAuth } from "@/store/auth";
@@ -24,6 +25,20 @@ function BagIcon() {
   );
 }
 
+function SearchIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="11" cy="11" r="6.4" stroke="currentColor" strokeWidth="1.4" />
+      <path
+        d="M15.8 15.8 20 20"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function UserIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -39,8 +54,28 @@ function UserIcon() {
 }
 
 export function SiteHeader({ categories = [] }: { categories?: Category[] }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const navCategories = categories.filter((c) => c.parent_id === null);
+
+  // Global search — expands inline on desktop, lives in the menu on mobile.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (searchOpen) searchRef.current?.focus();
+  }, [searchOpen]);
+
+  function submitSearch(e: React.FormEvent) {
+    e.preventDefault();
+    const q = query.trim();
+    if (!q) return;
+    setSearchOpen(false);
+    setOpen(false);
+    setQuery("");
+    router.push(`/shop?search=${encodeURIComponent(q)}`);
+  }
 
   // Cart count — guarded so SSR (0) and first client render match before
   // localStorage hydrates.
@@ -106,6 +141,30 @@ export function SiteHeader({ categories = [] }: { categories?: Category[] }) {
 
           {/* Icons (right) */}
           <div className="flex flex-1 items-center justify-end gap-4">
+            {searchOpen ? (
+              <form onSubmit={submitSearch} className="hidden items-center gap-2 md:flex">
+                <input
+                  ref={searchRef}
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Escape" && setSearchOpen(false)}
+                  onBlur={() => !query && setSearchOpen(false)}
+                  placeholder="Search pieces…"
+                  className="w-44 border-b border-ink/30 bg-transparent pb-1 text-sm outline-none placeholder:text-ink-soft/60 focus:border-madder"
+                  aria-label="Search products"
+                />
+              </form>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                aria-label="Search"
+                className="hidden hover:text-madder transition-colors md:block"
+              >
+                <SearchIcon />
+              </button>
+            )}
             {mounted && isAdmin && (
               <Link
                 href="/admin"
@@ -139,6 +198,17 @@ export function SiteHeader({ categories = [] }: { categories?: Category[] }) {
         {/* Mobile menu */}
         {open && (
           <nav className="border-t border-ink/10 px-6 py-4 md:hidden">
+            <form onSubmit={submitSearch} className="mb-4 flex items-center gap-2">
+              <SearchIcon />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search pieces…"
+                className="flex-1 border-b border-ink/30 bg-transparent pb-1 text-sm outline-none placeholder:text-ink-soft/60 focus:border-madder"
+                aria-label="Search products"
+              />
+            </form>
             <ul className="flex flex-col gap-3 text-sm font-semibold uppercase tracking-[0.14em]">
               {STATIC_LINKS.map((l) => (
                 <li key={l.href}>

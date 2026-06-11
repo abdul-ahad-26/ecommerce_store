@@ -53,19 +53,23 @@ export default function AdminLayout({
           <span className="font-display text-2xl text-ink">Meher</span>
           <span className="eyebrow text-madder">Admin</span>
         </Link>
-        <div className="flex items-center gap-5 text-xs uppercase tracking-[0.14em] text-ink-soft">
+        {/* Visual hierarchy: muted identity → quiet nav link → explicit action */}
+        <div className="flex items-center gap-5">
           {user?.full_name && (
-            <span className="hidden sm:inline text-ink-soft/80">
+            <span className="hidden sm:inline text-sm text-ink-soft/70">
               {user.full_name}
             </span>
           )}
-          <Link href="/" className="hover:text-madder">
+          <Link
+            href="/"
+            className="text-xs font-semibold uppercase tracking-[0.14em] text-ink hover:text-madder"
+          >
             View store →
           </Link>
           <button
             type="button"
             onClick={handleSignOut}
-            className="uppercase tracking-[0.14em] hover:text-madder"
+            className="border border-ink/25 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-ink transition-colors hover:border-madder hover:text-madder"
           >
             Sign out
           </button>

@@ -30,7 +30,61 @@ export default function AdminProducts() {
       {isLoading || !data ? (
         <p className="mt-8 text-sm text-ink-soft">Loading…</p>
       ) : (
-        <div className="mt-8 overflow-x-auto">
+        <>
+        {/* Mobile cards */}
+        <ul className="mt-8 space-y-3 sm:hidden">
+          {data.map((p) => {
+            const stock = p.variants.reduce((n, v) => n + v.stock_qty, 0);
+            return (
+              <li key={p.id} className="border border-ink/10 bg-cream p-4">
+                <div className="flex items-center gap-3">
+                  <div className="relative h-14 w-11 shrink-0 overflow-hidden bg-paper-deep">
+                    {p.images[0] && (
+                      <Image
+                        src={p.images[0].url}
+                        alt={p.name}
+                        fill
+                        sizes="44px"
+                        className="object-cover"
+                      />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-ink">{p.name}</p>
+                    <p className="text-xs text-ink-soft">
+                      {formatPKR(p.sale_price ?? p.base_price)} ·{" "}
+                      <span className={stock === 0 ? "text-madder" : ""}>
+                        {stock} in stock
+                      </span>{" "}
+                      · {p.is_published ? "Live" : "Draft"}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-4 text-xs uppercase tracking-[0.12em]">
+                  <Link
+                    href={`/admin/products/${p.id}`}
+                    className="text-ink underline hover:text-madder"
+                  >
+                    Edit
+                  </Link>
+                  <button
+                    onClick={() => {
+                      if (confirm(`Delete "${p.name}"?`)) {
+                        deleteMut.mutate(p.id);
+                      }
+                    }}
+                    className="text-ink-soft underline hover:text-madder"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* Desktop table */}
+        <div className="mt-8 hidden overflow-x-auto sm:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-ink/15 text-left text-xs uppercase tracking-[0.12em] text-ink-soft">
@@ -112,6 +166,7 @@ export default function AdminProducts() {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );

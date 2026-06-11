@@ -70,6 +70,21 @@ export interface AdminOrderSummary {
   placed_at: string;
 }
 
+export interface PaginatedAdminOrders {
+  items: AdminOrderSummary[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+}
+
+export interface AdminOrdersQuery {
+  page?: number;
+  page_size?: number;
+  status?: string;
+  q?: string;
+}
+
 export interface DashboardStats {
   total_orders: number;
   pending_orders: number;
@@ -165,8 +180,10 @@ export const deleteCategory = (id: number) =>
   apiFetch<void>(`/admin/categories/${id}`, { method: "DELETE" });
 
 // --- Orders ---
-export const listAdminOrders = () =>
-  apiFetch<AdminOrderSummary[]>("/admin/orders");
+// Server-side pagination + filters so search/status work across the full
+// order history, not just one page.
+export const listAdminOrders = (params: AdminOrdersQuery = {}) =>
+  apiFetch<PaginatedAdminOrders>("/admin/orders", { params: { ...params } });
 export const updateOrderStatus = (orderNumber: string, status: string) =>
   apiFetch<AdminOrderSummary>(`/admin/orders/${orderNumber}/status`, {
     method: "PATCH",
