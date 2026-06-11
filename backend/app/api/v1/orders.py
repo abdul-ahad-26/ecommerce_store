@@ -1,10 +1,11 @@
 """Order endpoints: checkout, order history, single order lookup."""
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 
 from app.deps import CurrentUser, DbSession, OptionalUser
 from app.models.enums import UserRole
 from app.schemas.order import CheckoutRequest, OrderResponse, OrderSummary
+from app.services import email as email_service
 from app.services import orders as orders_service
 from app.services.orders import CheckoutError
 
@@ -13,7 +14,10 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 
 @router.post("", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
 async def create_order(
-    payload: CheckoutRequest, db: DbSession, user: OptionalUser
+    payload: CheckoutRequest,
+    db: DbSession,
+    user: OptionalUser,
+    background_tasks: BackgroundTasks,
 ) -> OrderResponse:
     try:
         order = await orders_service.create_order(db, payload, user)
@@ -21,6 +25,11 @@ async def create_order(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=str(exc)
         ) from exc
+
+    # Fire notifications after the response — they never block or fail checkout.
+    background_tasks.add_task(email_service.send_order_confirmation, order)
+    background_tasks.add_task(email_service.send_new_order_alert, order)
+
     return OrderResponse.model_validate(order)
 
 

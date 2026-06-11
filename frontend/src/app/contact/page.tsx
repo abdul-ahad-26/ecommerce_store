@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { InfoPage, InfoSection } from "@/components/info-page";
+import { CONTACT, whatsappLink } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -16,23 +17,41 @@ export default function ContactPage() {
       <InfoSection heading="WhatsApp & phone">
         <p>
           <a
-            href="https://wa.me/920000000000"
+            href={whatsappLink("Hi Meher, I have a question about")}
             className="font-medium text-madder underline"
           >
             Message us on WhatsApp
           </a>{" "}
           — usually the fastest way to reach us.
         </p>
-        <p>Phone: +92 000 0000000 (Mon–Sat, 10am–7pm PKT)</p>
+        <p>Phone: {CONTACT.phone} (Mon–Sat, 10am–7pm PKT)</p>
       </InfoSection>
 
       <InfoSection heading="Email">
         <p>
-          <a href="mailto:hello@meher.pk" className="font-medium text-madder underline">
-            hello@meher.pk
+          <a
+            href={`mailto:${CONTACT.email}`}
+            className="font-medium text-madder underline"
+          >
+            {CONTACT.email}
           </a>
         </p>
       </InfoSection>
+
+      {CONTACT.instagramUrl && (
+        <InfoSection heading="Instagram">
+          <p>
+            <a
+              href={CONTACT.instagramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-madder underline"
+            >
+              Follow our latest pieces
+            </a>
+          </p>
+        </InfoSection>
+      )}
 
       <InfoSection heading="Orders">
         <p>
@@ -41,11 +60,6 @@ export default function ContactPage() {
           page). You can also view your orders under your account.
         </p>
       </InfoSection>
-
-      <p className="text-sm text-ink-soft/80">
-        Replace the placeholder phone, WhatsApp number, and email above with the
-        store&apos;s real contact details before going live.
-      </p>
     </InfoPage>
   );
 }

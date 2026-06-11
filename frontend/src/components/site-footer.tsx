@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Motif } from "./motif";
+import { CONTACT, whatsappLink } from "@/lib/site";
 
 export function SiteFooter() {
   return (
@@ -16,6 +17,32 @@ export function SiteFooter() {
               Premium Pakistani women&apos;s wear — lawn, stitched and unstitched
               shalwar kameez, crafted in the spirit of grace.
             </p>
+            <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-soft">
+              <a
+                href={whatsappLink()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-madder transition-colors"
+              >
+                WhatsApp
+              </a>
+              {CONTACT.instagramUrl && (
+                <a
+                  href={CONTACT.instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-madder transition-colors"
+                >
+                  Instagram
+                </a>
+              )}
+              <a
+                href={`mailto:${CONTACT.email}`}
+                className="hover:text-madder transition-colors"
+              >
+                Email
+              </a>
+            </div>
             <Motif className="mt-6 h-10 w-10 text-gold" />
           </div>
 

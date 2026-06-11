@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   listAdminOrders,
@@ -11,6 +13,10 @@ import { formatPKR } from "@/lib/format";
 
 export default function AdminOrders() {
   const qc = useQueryClient();
+  const initialStatus = useSearchParams().get("status") ?? "all";
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [search, setSearch] = useState("");
+
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "orders"],
     queryFn: listAdminOrders,
@@ -25,15 +31,60 @@ export default function AdminOrders() {
     },
   });
 
+  const filtered = useMemo(() => {
+    if (!data) return [];
+    const q = search.trim().toLowerCase();
+    return data.filter((o) => {
+      if (statusFilter !== "all" && o.status !== statusFilter) return false;
+      if (!q) return true;
+      return (
+        o.order_number.toLowerCase().includes(q) ||
+        o.customer_name.toLowerCase().includes(q) ||
+        o.customer_phone.toLowerCase().includes(q)
+      );
+    });
+  }, [data, statusFilter, search]);
+
   if (isLoading || !data) {
     return <p className="text-sm text-ink-soft">Loading orders…</p>;
   }
 
   return (
     <div>
-      <h1 className="font-display text-4xl text-ink">Orders</h1>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <h1 className="font-display text-4xl text-ink">Orders</h1>
+        <p className="text-sm text-ink-soft">
+          {filtered.length} of {data.length}
+        </p>
+      </div>
+
+      {/* Filters */}
+      <div className="mt-6 flex flex-wrap gap-3">
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search order #, name or phone"
+          className="min-w-60 flex-1 border border-ink/20 bg-cream px-3 py-2 text-sm outline-none focus:border-madder"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="border border-ink/20 bg-cream px-3 py-2 text-sm capitalize outline-none focus:border-madder"
+        >
+          <option value="all">All statuses</option>
+          {ORDER_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {data.length === 0 ? (
-        <p className="mt-6 text-ink-soft">No orders yet.</p>
+        <p className="mt-8 text-ink-soft">No orders yet.</p>
+      ) : filtered.length === 0 ? (
+        <p className="mt-8 text-ink-soft">No orders match your filters.</p>
       ) : (
         <div className="mt-8 overflow-x-auto">
           <table className="w-full text-sm">
@@ -48,7 +99,7 @@ export default function AdminOrders() {
               </tr>
             </thead>
             <tbody className="divide-y divide-ink/10">
-              {data.map((o) => (
+              {filtered.map((o) => (
                 <tr key={o.order_number}>
                   <td className="py-3 pr-4">
                     <Link

@@ -1,14 +1,23 @@
 import Link from "next/link";
-import Image from "next/image";
 import { getProducts, type ProductListItem } from "@/lib/catalog";
 import { ProductGrid } from "@/components/product-grid";
 import { SectionLabel } from "@/components/section-label";
 import { Motif } from "@/components/motif";
+import { HeroCarousel, type HeroSlide } from "@/components/hero-carousel";
+import { CONTACT, whatsappLink } from "@/lib/site";
+import { TESTIMONIALS } from "@/data/testimonials";
 
 const COLLECTIONS = [
   { slug: "lawn", name: "Lawn", note: "Breathable everyday elegance" },
   { slug: "stitched", name: "Stitched", note: "Ready to wear, ready to shine" },
   { slug: "unstitched", name: "Unstitched", note: "Tailored to your story" },
+];
+
+const ASSURANCES = [
+  { title: "Cash on Delivery", note: "Pay when it arrives — nationwide" },
+  { title: "Free Shipping", note: "On orders over Rs 5,000" },
+  { title: "7-Day Returns", note: "Easy exchanges & returns" },
+  { title: "Crafted in Pakistan", note: "Heritage textile, made with care" },
 ];
 
 async function getFeatured(): Promise<ProductListItem[]> {
@@ -22,7 +31,10 @@ async function getFeatured(): Promise<ProductListItem[]> {
 
 export default async function Home() {
   const featured = await getFeatured();
-  const heroImage = featured.find((p) => p.primary_image)?.primary_image;
+  const heroSlides: HeroSlide[] = featured
+    .filter((p) => p.primary_image)
+    .slice(0, 5)
+    .map((p) => ({ image: p.primary_image as string, name: p.name, slug: p.slug }));
 
   return (
     <>
@@ -59,34 +71,35 @@ export default async function Home() {
           </div>
         </div>
 
-        {/* Hero visual */}
-        <div
-          className="reveal relative aspect-[4/5] overflow-hidden bg-paper-deep"
-          style={{ animationDelay: "240ms" }}
-        >
-          {heroImage ? (
-            <Image
-              src={heroImage}
-              alt="Featured piece from the collection"
-              fill
-              priority
-              sizes="(max-width: 768px) 100vw, 40vw"
-              className="object-cover"
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <Motif className="h-24 w-24 text-gold" />
+        {/* Hero visual — rotating featured pieces */}
+        {heroSlides.length > 0 ? (
+          <HeroCarousel slides={heroSlides} />
+        ) : (
+          <div
+            className="reveal relative flex aspect-[4/5] items-center justify-center overflow-hidden bg-paper-deep"
+            style={{ animationDelay: "240ms" }}
+          >
+            <Motif className="h-24 w-24 text-gold" />
+            <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-ink/10" />
+          </div>
+        )}
+      </section>
+
+      {/* ---------------- ASSURANCES ---------------- */}
+      <section className="mx-auto max-w-[1400px] px-6">
+        <div className="grid grid-cols-2 gap-px border border-ink/10 bg-ink/10 lg:grid-cols-4">
+          {ASSURANCES.map((a) => (
+            <div key={a.title} className="bg-cream px-6 py-7 text-center">
+              <Motif className="mx-auto h-7 w-7 text-gold" />
+              <p className="mt-3 font-display text-lg text-ink">{a.title}</p>
+              <p className="mt-1 text-xs text-ink-soft">{a.note}</p>
             </div>
-          )}
-          <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-ink/10" />
-          <span className="absolute bottom-4 left-4 bg-paper/85 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-ink backdrop-blur">
-            New In
-          </span>
+          ))}
         </div>
       </section>
 
       <div className="mx-auto max-w-[1400px] px-6">
-        <div className="rule-gold" />
+        <div className="rule-gold mt-16" />
       </div>
 
       {/* ---------------- COLLECTIONS ---------------- */}
@@ -142,6 +155,60 @@ export default async function Home() {
               Every piece carries the quiet artistry of Pakistani textile —
               block prints, fine embroidery, and fabric that breathes.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------- TESTIMONIALS (only when real quotes exist) ---------------- */}
+      {TESTIMONIALS.length > 0 && (
+        <section className="mx-auto max-w-[1400px] px-6 py-20">
+          <SectionLabel index="04">What our customers say</SectionLabel>
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
+            {TESTIMONIALS.map((t) => (
+              <figure
+                key={t.name}
+                className="flex flex-col justify-between border border-ink/10 bg-cream p-7"
+              >
+                <blockquote className="font-display text-xl leading-snug text-ink">
+                  “{t.quote}”
+                </blockquote>
+                <figcaption className="mt-6 text-sm text-ink-soft">
+                  <span className="font-semibold text-ink">{t.name}</span> ·{" "}
+                  {t.city}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ---------------- SOCIAL CTA ---------------- */}
+      {/* No bottom padding here — the footer's mt-24 already provides the gap;
+          stacking pb-24 + mt-24 left a ~190px blank band before the footer. */}
+      <section className="mx-auto max-w-[1400px] px-6 pt-4">
+        <div className="flex flex-col items-center gap-5 border border-gold/40 bg-paper-deep px-6 py-14 text-center">
+          <Motif className="h-10 w-10 text-gold" />
+          <h2 className="font-display text-3xl text-ink sm:text-4xl">
+            Follow our journey
+          </h2>
+          <p className="max-w-md text-sm text-ink-soft">
+            New arrivals, styling notes and behind-the-scenes from the atelier —
+            and the quickest way to reach us for orders.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <a href={whatsappLink()} target="_blank" rel="noopener noreferrer" className="btn-ink">
+              Chat on WhatsApp
+            </a>
+            {CONTACT.instagramUrl && (
+              <a
+                href={CONTACT.instagramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-semibold uppercase tracking-[0.16em] text-madder hover:underline"
+              >
+                Instagram →
+              </a>
+            )}
           </div>
         </div>
       </section>

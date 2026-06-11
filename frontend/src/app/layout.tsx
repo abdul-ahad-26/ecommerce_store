@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Hanken_Grotesk, Noto_Nastaliq_Urdu } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { SiteChrome } from "@/components/site-chrome";
 import { getCategories, type Category } from "@/lib/catalog";
 
 // Fetch nav categories without letting a backend hiccup break the whole site.
@@ -52,9 +53,21 @@ export const metadata: Metadata = {
     title: "Meher — Pakistani Women's Wear",
     description:
       "Premium Pakistani women's wear — lawn, stitched & unstitched shalwar kameez. Cash on delivery across Pakistan.",
+    siteName: "Meher",
+    url: "/",
     type: "website",
     locale: "en_PK",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Meher — Pakistani Women's Wear",
+    description:
+      "Premium Pakistani women's wear — lawn, stitched & unstitched shalwar kameez. Cash on delivery across Pakistan.",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#b14a33",
 };
 
 export default async function RootLayout({
@@ -71,9 +84,12 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-paper text-ink antialiased font-body">
         <Providers>
-          <SiteHeader categories={categories} />
-          <main className="flex-1">{children}</main>
-          <SiteFooter />
+          <SiteChrome
+            header={<SiteHeader categories={categories} />}
+            footer={<SiteFooter />}
+          >
+            {children}
+          </SiteChrome>
         </Providers>
       </body>
     </html>

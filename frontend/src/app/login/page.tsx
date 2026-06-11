@@ -64,9 +64,17 @@ export default function LoginPage() {
         </label>
 
         <label className="block">
-          <span className="mb-1.5 block text-xs uppercase tracking-[0.12em] text-ink-soft">
-            Password
-          </span>
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-xs uppercase tracking-[0.12em] text-ink-soft">
+              Password
+            </span>
+            <Link
+              href="/forgot-password"
+              className="text-xs text-madder hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
           <input className="ip" type="password" {...register("password")} />
           {errors.password && (
             <span className="mt-1 block text-xs text-madder">
