@@ -66,6 +66,23 @@ class Settings(BaseSettings):
     # Public storefront base URL — used to build links inside emails.
     FRONTEND_URL: str = "http://localhost:3000"
 
+    # --- AI shopping assistant ---
+    # Tool-using "agent-lite" over the catalog/orders. Disabled (503) when off.
+    ASSISTANT_ENABLED: bool = True
+    # Active model key from services/assistant/models.py REGISTRY.
+    ASSISTANT_MODEL: str = "openai:gpt-4.1-mini"
+    # Dev convenience: let a request pick a model (for A/B comparison). Keep
+    # False in production so the public can't drive up cost on a pricey model.
+    ASSISTANT_ALLOW_MODEL_OVERRIDE: bool = True
+    # Cap the agent loop (LLM turns) and the history window (messages) to bound
+    # latency and token cost.
+    ASSISTANT_MAX_TURNS: int = 8
+    ASSISTANT_MAX_HISTORY: int = 20
+    # Provider keys. OpenAI enables the tracing dashboard; Groq is a free
+    # OpenAI-compatible alternative for comparison. Either may be empty.
+    OPENAI_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]

@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { AssistantWidget } from "@/components/assistant-widget";
 
 /**
  * Chooses page chrome by route. The /admin area is a back-office and should not
@@ -33,6 +34,7 @@ export function SiteChrome({
       {header}
       <main className="flex-1">{children}</main>
       {footer}
+      <AssistantWidget />
     </>
   );
 }

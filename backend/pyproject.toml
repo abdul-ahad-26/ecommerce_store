@@ -9,6 +9,7 @@ dependencies = [
     "cloudinary>=1.44.2",
     "fastapi[standard]>=0.136.3",
     "httpx>=0.28.1",
+    "openai-agents>=0.17.5",
     "passlib[bcrypt]>=1.7.4",
     "pydantic-settings>=2",
     "pydantic[email]>=2.13.4",
