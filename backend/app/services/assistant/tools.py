@@ -36,6 +36,9 @@ class AssistantContext:
     # Cart suggestions raised this turn by ``propose_cart_action`` — the
     # endpoint reads these out and forwards them to the frontend.
     proposed_actions: list[dict] = field(default_factory=list)
+    # Product cards raised this turn by ``present_products`` — streamed to the
+    # widget as data-product parts (image + price + link to the PDP).
+    proposed_products: list[dict] = field(default_factory=list)
 
 
 # --- plain implementations (testable) ------------------------------------
@@ -121,32 +124,87 @@ async def get_product_details_impl(db: AsyncSession, slug: str) -> dict:
     }
 
 
-async def get_facets_impl(db: AsyncSession) -> dict:
-    """Valid filter values, so the model doesn't guess exact-match terms."""
-    cats = (
-        await db.scalars(select(Category).order_by(Category.sort_order))
-    ).all()
-    sizes = (
-        await db.scalars(
-            select(ProductVariant.size)
-            .join(Product, ProductVariant.product_id == Product.id)
-            .where(Product.is_published.is_(True), ProductVariant.size.is_not(None))
-            .distinct()
-        )
-    ).all()
-    colors = (
-        await db.scalars(
-            select(ProductVariant.color)
-            .join(Product, ProductVariant.product_id == Product.id)
-            .where(Product.is_published.is_(True), ProductVariant.color.is_not(None))
-            .distinct()
-        )
-    ).all()
-    return {
-        "categories": [{"slug": c.slug, "name": c.name} for c in cats],
-        "sizes": sorted(s for s in sizes if s),
-        "colors": sorted(c for c in colors if c),
-    }
+async def present_products_impl(db: AsyncSession, slugs: list[str]) -> list[dict]:
+    """Build compact product cards (image, price, link target, quick-add variant)
+    for the given slugs — what the widget renders to drive clicks to the PDP."""
+    cards: list[dict] = []
+    seen: set[str] = set()
+    for slug in slugs:
+        slug = slug.strip()
+        if not slug or slug in seen:
+            continue
+        seen.add(slug)
+        product = await catalog.get_product_by_slug(db, slug)
+        if product is None:
+            continue
+        image = product.images[0].url if product.images else None
+        addable = next((v for v in product.variants if v.stock_qty > 0), None)
+        card = {
+            "slug": product.slug,
+            "name": product.name,
+            "price": float(catalog.effective_product_price(product)),
+            "on_sale": product.sale_price is not None,
+            "image": image,
+            "in_stock": addable is not None,
+            "variant_id": None,
+            "variant_label": None,
+            "unit_price": None,
+            "available_qty": None,
+        }
+        if addable is not None:
+            label_bits = " / ".join(
+                b for b in (addable.size, addable.color) if b
+            )
+            card["variant_id"] = addable.id
+            card["variant_label"] = label_bits or None
+            card["unit_price"] = float(catalog.map_variant(product, addable).price)
+            card["available_qty"] = addable.stock_qty
+        cards.append(card)
+    return cards
+
+
+async def get_facets_impl(db: AsyncSession, kind: str | None = None) -> dict:
+    """Valid filter values, so the model doesn't guess exact-match terms.
+
+    ``kind`` optionally narrows the result to "categories", "sizes", or
+    "colors"; omit it for all three.
+    """
+    want = (kind or "").strip().lower()
+    result: dict = {}
+
+    if want in ("", "categories"):
+        cats = (
+            await db.scalars(select(Category).order_by(Category.sort_order))
+        ).all()
+        result["categories"] = [{"slug": c.slug, "name": c.name} for c in cats]
+
+    if want in ("", "sizes"):
+        sizes = (
+            await db.scalars(
+                select(ProductVariant.size)
+                .join(Product, ProductVariant.product_id == Product.id)
+                .where(
+                    Product.is_published.is_(True), ProductVariant.size.is_not(None)
+                )
+                .distinct()
+            )
+        ).all()
+        result["sizes"] = sorted(s for s in sizes if s)
+
+    if want in ("", "colors"):
+        colors = (
+            await db.scalars(
+                select(ProductVariant.color)
+                .join(Product, ProductVariant.product_id == Product.id)
+                .where(
+                    Product.is_published.is_(True), ProductVariant.color.is_not(None)
+                )
+                .distinct()
+            )
+        ).all()
+        result["colors"] = sorted(c for c in colors if c)
+
+    return result
 
 
 def get_store_policy_impl(topic: str) -> dict:
@@ -166,9 +224,14 @@ async def get_order_status_impl(
         }
     order = await orders.get_order_by_number(db, order_number.strip())
     # Scope strictly to the logged-in user — never expose another customer's
-    # order (which would leak name/address/phone).
+    # order (which would leak name/address/phone). Distinct from auth_required so
+    # the model tells a logged-in user "not on your account" instead of "log in".
     if order is None or order.user_id != user.id:
-        return {"error": "not_found", "order_number": order_number}
+        return {
+            "error": "not_found_for_user",
+            "order_number": order_number,
+            "message": "No order with that number is on this account.",
+        }
     return {
         "order_number": order.order_number,
         "status": order.status,
@@ -229,14 +292,21 @@ async def propose_cart_action_impl(
         "unit_price": float(price),
         "image": image,
         "qty": qty,
+        "available_qty": variant.stock_qty,  # soft cap for the cart steppers
         "label": label,
     }
 
 
 # --- function_tool wrappers (what the agent calls) -----------------------
+#
+# strict_json_schema=False for cross-provider support: OpenAI's strict mode
+# forces the model to emit every parameter (optionals become nullable+required).
+# OpenAI complies, but Groq's Llama omits optional args and Groq then rejects its
+# own tool call ("missing properties: …"). Non-strict accepts partial args; for
+# these simple read-only tools the reliability cost on OpenAI is negligible.
 
 
-@function_tool
+@function_tool(strict_mode=False)
 async def search_products(
     ctx: RunContextWrapper[AssistantContext],
     query: str | None = None,
@@ -272,7 +342,7 @@ async def search_products(
     )
 
 
-@function_tool
+@function_tool(strict_mode=False)
 async def get_product_details(
     ctx: RunContextWrapper[AssistantContext], slug: str
 ) -> dict:
@@ -286,14 +356,37 @@ async def get_product_details(
     return await get_product_details_impl(ctx.context.db, slug)
 
 
-@function_tool
-async def get_facets(ctx: RunContextWrapper[AssistantContext]) -> dict:
+@function_tool(strict_mode=False)
+async def present_products(
+    ctx: RunContextWrapper[AssistantContext], slugs: list[str]
+) -> dict:
+    """Show the customer visual product cards (image, price, link to the product
+    page, quick add-to-cart). ALWAYS call this when you recommend or list
+    specific products, passing their slugs (from search results, up to 6). Keep
+    your own text short afterwards — the cards already show the details.
+
+    Args:
+        slugs: Product slugs to display as cards.
+    """
+    cards = await present_products_impl(ctx.context.db, slugs[:6])
+    ctx.context.proposed_products.extend(cards)
+    return {"shown": len(cards), "slugs": [c["slug"] for c in cards]}
+
+
+@function_tool(strict_mode=False)
+async def get_facets(
+    ctx: RunContextWrapper[AssistantContext], kind: str | None = None
+) -> dict:
     """List the valid category slugs, sizes, and colours in the catalog. Call
-    this before filtering search_products so you use real values."""
-    return await get_facets_impl(ctx.context.db)
+    this before filtering search_products so you use real values.
+
+    Args:
+        kind: Optionally limit to "categories", "sizes", or "colors". Omit for all.
+    """
+    return await get_facets_impl(ctx.context.db, kind)
 
 
-@function_tool
+@function_tool(strict_mode=False)
 async def get_store_policy(
     ctx: RunContextWrapper[AssistantContext], topic: str
 ) -> dict:
@@ -306,13 +399,14 @@ async def get_store_policy(
     return get_store_policy_impl(topic)
 
 
-@function_tool
+@function_tool(strict_mode=False)
 async def get_order_status(
     ctx: RunContextWrapper[AssistantContext], order_number: str
 ) -> dict:
     """Look up the status of the logged-in customer's order by its number
-    (e.g. "MR1A2B3C4D"). Only works for the current logged-in user's own
-    orders; otherwise returns not_found.
+    (e.g. "MR1A2B3C4D"). Returns auth_required for guests, not_found_for_user
+    when the logged-in customer has no such order on their account, otherwise
+    the order's status + items.
 
     Args:
         order_number: The order number to look up.
@@ -322,7 +416,7 @@ async def get_order_status(
     )
 
 
-@function_tool
+@function_tool(strict_mode=False)
 async def propose_cart_action(
     ctx: RunContextWrapper[AssistantContext],
     slug: str,
@@ -352,6 +446,7 @@ async def propose_cart_action(
 ALL_TOOLS = [
     search_products,
     get_product_details,
+    present_products,
     get_facets,
     get_store_policy,
     get_order_status,

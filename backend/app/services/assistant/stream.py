@@ -18,7 +18,7 @@ import logging
 import uuid
 from collections.abc import AsyncIterator
 
-from agents import Runner
+from agents import Runner, trace
 from openai.types.responses import ResponseTextDeltaEvent
 
 from app.core.config import settings
@@ -44,11 +44,16 @@ def _sse(chunk: dict) -> str:
 
 
 async def stream_assistant(
-    *, context: AssistantContext, messages: list[ChatMessage], model_key: str
+    *,
+    context: AssistantContext,
+    messages: list[ChatMessage],
+    model_key: str,
+    page_note: str = "",
+    group_id: str | None = None,
 ) -> AsyncIterator[str]:
     """Run the agent and yield AI-SDK-protocol SSE chunks as text streams in."""
     configure_once()
-    agent = build_agent(model_key)
+    agent = build_agent(model_key, page_note)
     history = messages[-settings.ASSISTANT_MAX_HISTORY :]
     input_items = [{"role": m.role, "content": m.content} for m in history]
 
@@ -57,20 +62,25 @@ async def stream_assistant(
     yield _sse({"type": "text-start", "id": text_id})
 
     try:
-        result = Runner.run_streamed(
-            agent,
-            input_items,
-            context=context,
-            max_turns=settings.ASSISTANT_MAX_TURNS,
-        )
-        async for event in result.stream_events():
-            if event.type == "raw_response_event" and isinstance(
-                event.data, ResponseTextDeltaEvent
-            ):
-                if event.data.delta:
-                    yield _sse(
-                        {"type": "text-delta", "id": text_id, "delta": event.data.delta}
-                    )
+        with trace("Meher Assistant", group_id=group_id):
+            result = Runner.run_streamed(
+                agent,
+                input_items,
+                context=context,
+                max_turns=settings.ASSISTANT_MAX_TURNS,
+            )
+            async for event in result.stream_events():
+                if event.type == "raw_response_event" and isinstance(
+                    event.data, ResponseTextDeltaEvent
+                ):
+                    if event.data.delta:
+                        yield _sse(
+                            {
+                                "type": "text-delta",
+                                "id": text_id,
+                                "delta": event.data.delta,
+                            }
+                        )
     except Exception:  # noqa: BLE001 — headers are sent; report via an error chunk
         logger.exception("Assistant stream failed")
         yield _sse({"type": "text-end", "id": text_id})
@@ -85,7 +95,9 @@ async def stream_assistant(
 
     yield _sse({"type": "text-end", "id": text_id})
 
-    # Cart suggestions raised during the run -> typed data parts for the widget.
+    # Product cards + cart suggestions raised during the run -> typed data parts.
+    for product in context.proposed_products:
+        yield _sse({"type": "data-product", "data": product})
     for action in context.proposed_actions:
         yield _sse({"type": "data-cart-action", "data": action})
 

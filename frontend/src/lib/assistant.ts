@@ -20,7 +20,23 @@ export interface CartActionData {
   unit_price: number;
   image: string | null;
   qty: number;
+  available_qty: number;
   label: string;
+}
+
+/** A product card the assistant emits as a `data-product` part. */
+export interface ProductCardData {
+  slug: string;
+  name: string;
+  price: number;
+  on_sale: boolean;
+  image: string | null;
+  in_stock: boolean;
+  // First in-stock variant, for quick add-to-cart (null if out of stock).
+  variant_id: number | null;
+  variant_label: string | null;
+  unit_price: number | null;
+  available_qty: number | null;
 }
 
 export interface AssistantModel {
@@ -49,5 +65,22 @@ export function cartActionToItem(a: CartActionData): Omit<CartItem, "qty"> {
     variantLabel: a.variant_label,
     unitPrice: a.unit_price,
     image: a.image,
+    maxQty: a.available_qty,
+  };
+}
+
+/** Map a product card's quick-add variant to a cart item (null if no variant). */
+export function productCardToItem(
+  p: ProductCardData,
+): Omit<CartItem, "qty"> | null {
+  if (p.variant_id == null || p.unit_price == null) return null;
+  return {
+    variantId: p.variant_id,
+    productSlug: p.slug,
+    productName: p.name,
+    variantLabel: p.variant_label,
+    unitPrice: p.unit_price,
+    image: p.image,
+    maxQty: p.available_qty ?? undefined,
   };
 }

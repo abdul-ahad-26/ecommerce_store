@@ -13,20 +13,31 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { API_BASE_URL, getAccessToken } from "@/lib/api";
 import {
   cartActionToItem,
   listModels,
+  productCardToItem,
   type AssistantModel,
   type CartActionData,
+  type ProductCardData,
 } from "@/lib/assistant";
 import { formatPKR } from "@/lib/format";
 import { useCart } from "@/store/cart";
 
-// Type the custom data part so `part.data` is a typed CartActionData.
-type AssistantUIMessage = UIMessage<unknown, { "cart-action": CartActionData }>;
+// Type the custom data parts so `part.data` is typed.
+type AssistantUIMessage = UIMessage<
+  unknown,
+  { "cart-action": CartActionData; product: ProductCardData }
+>;
+
+const CID_KEY = "meher-assistant-cid";
+const MSGS_KEY = "meher-assistant-msgs";
 
 const SUGGESTIONS = [
   "Show me lawn under Rs 5,000",
@@ -38,13 +49,22 @@ export function AssistantWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const addItem = useCart((s) => s.addItem);
-  const [added, setAdded] = useState<Set<number>>(new Set());
+  // Derive "added" from the (persisted) cart so the buttons stay truthful across
+  // refreshes and reflect removals — no separate state to keep in sync.
+  const cartItems = useCart((s) => s.items);
+  const inCart = (variantId: number | null | undefined) =>
+    variantId != null && cartItems.some((i) => i.variantId === variantId);
 
   // Dev model picker (only shown when the backend allows overrides).
   const [models, setModels] = useState<AssistantModel[]>([]);
   const [overrideAllowed, setOverrideAllowed] = useState(false);
   const [selectedModel, setSelectedModel] = useState("");
   const modelRef = useRef<string | null>(null);
+
+  // Read at send-time by the transport (refs stay stable across renders).
+  const pageRef = useRef<{ path?: string; product_slug?: string }>({});
+  const conversationIdRef = useRef<string>("");
+  const pathname = usePathname();
 
   // Stable transport for the chat session. `headers`/`prepareSend…` are read
   // per-request, so they pick up the live auth token and selected model.
@@ -73,18 +93,27 @@ export function AssistantWidget() {
                   (m.role === "user" || m.role === "assistant") &&
                   m.content.length > 0,
               ),
+            page: pageRef.current,
+            conversation_id: conversationIdRef.current || undefined,
             ...(modelRef.current ? { model: modelRef.current } : {}),
           },
         }),
       }),
   );
 
-  const { messages, sendMessage, status, error } = useChat<AssistantUIMessage>({
-    transport,
-  });
+  const { messages, sendMessage, status, error, setMessages } =
+    useChat<AssistantUIMessage>({ transport });
 
   const busy = status === "submitted" || status === "streaming";
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Show the typing indicator whenever we're waiting and the assistant hasn't
+  // started producing visible text yet (covers the gap during tool calls too).
+  const last = messages[messages.length - 1];
+  const assistantHasText =
+    last?.role === "assistant" &&
+    last.parts.some((p) => p.type === "text" && p.text.length > 0);
+  const showTyping = busy && !assistantHasText;
 
   useEffect(() => {
     listModels()
@@ -99,6 +128,44 @@ export function AssistantWidget() {
       });
   }, []);
 
+  // Track what the customer is viewing so the agent can resolve "this".
+  useEffect(() => {
+    const match = pathname?.match(/^\/product\/(.+)$/);
+    pageRef.current = {
+      path: pathname ?? undefined,
+      product_slug: match ? match[1] : undefined,
+    };
+  }, [pathname]);
+
+  // Restore the conversation (id + messages) once; persist on every change so a
+  // refresh keeps context. The id also groups the runs in OpenAI tracing.
+  useEffect(() => {
+    try {
+      let cid = sessionStorage.getItem(CID_KEY);
+      if (!cid) {
+        cid = crypto.randomUUID();
+        sessionStorage.setItem(CID_KEY, cid);
+      }
+      conversationIdRef.current = cid;
+      const saved = sessionStorage.getItem(MSGS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length) setMessages(parsed);
+      }
+    } catch {
+      /* sessionStorage unavailable — run without persistence */
+    }
+  }, [setMessages]);
+
+  useEffect(() => {
+    if (messages.length === 0) return;
+    try {
+      sessionStorage.setItem(MSGS_KEY, JSON.stringify(messages));
+    } catch {
+      /* ignore quota/serialization errors */
+    }
+  }, [messages]);
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages, open]);
@@ -112,7 +179,12 @@ export function AssistantWidget() {
 
   function handleAdd(a: CartActionData) {
     addItem(cartActionToItem(a), a.qty);
-    setAdded((prev) => new Set(prev).add(a.variant_id));
+  }
+
+  function handleAddProduct(p: ProductCardData) {
+    const item = productCardToItem(p);
+    if (!item || p.variant_id == null) return;
+    addItem(item, 1);
   }
 
   return (
@@ -202,9 +274,21 @@ export function AssistantWidget() {
                         </p>
                       );
                     }
+                    if (part.type === "data-product") {
+                      const p = part.data;
+                      return (
+                        <AssistantProductCard
+                          key={i}
+                          product={p}
+                          added={inCart(p.variant_id)}
+                          onAdd={() => handleAddProduct(p)}
+                          onView={() => setOpen(false)}
+                        />
+                      );
+                    }
                     if (part.type === "data-cart-action") {
                       const a = part.data;
-                      const isAdded = added.has(a.variant_id);
+                      const isAdded = inCart(a.variant_id);
                       return (
                         <div
                           key={i}
@@ -231,9 +315,7 @@ export function AssistantWidget() {
               </div>
             ))}
 
-            {status === "submitted" && (
-              <p className="text-xs text-ink-soft">Thinking…</p>
-            )}
+            {showTyping && <TypingDots />}
             {error && (
               <p className="text-xs text-madder">
                 Something went wrong. Please try again.
@@ -267,6 +349,82 @@ export function AssistantWidget() {
         </div>
       )}
     </>
+  );
+}
+
+function AssistantProductCard({
+  product,
+  added,
+  onAdd,
+  onView,
+}: {
+  product: ProductCardData;
+  added: boolean;
+  onAdd: () => void;
+  onView: () => void;
+}) {
+  const href = `/product/${product.slug}`;
+  return (
+    <div className="flex gap-3 rounded-lg border border-ink/15 bg-paper p-2">
+      <Link
+        href={href}
+        onClick={onView}
+        className="relative aspect-[3/4] w-14 shrink-0 overflow-hidden bg-paper-deep"
+      >
+        {product.image && (
+          <Image
+            src={product.image}
+            alt={product.name}
+            fill
+            sizes="56px"
+            className="object-cover"
+          />
+        )}
+      </Link>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Link
+          href={href}
+          onClick={onView}
+          className="truncate text-sm font-medium text-ink hover:text-madder"
+        >
+          {product.name}
+        </Link>
+        <p className="text-xs text-ink-soft">{formatPKR(product.price)}</p>
+        <div className="mt-auto flex gap-2 pt-1.5">
+          <Link
+            href={href}
+            onClick={onView}
+            className="rounded-md border border-ink/20 px-2.5 py-1 text-xs text-ink transition hover:border-madder hover:text-madder"
+          >
+            View
+          </Link>
+          {product.in_stock && product.variant_id != null && (
+            <button
+              type="button"
+              disabled={added}
+              onClick={onAdd}
+              className="rounded-md bg-madder px-2.5 py-1 text-xs font-medium text-cream transition hover:bg-madder-deep disabled:bg-sage"
+            >
+              {added ? "Added ✓" : "Add"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TypingDots() {
+  return (
+    <div className="flex items-center gap-1 px-1 py-1" aria-label="Assistant is typing">
+      {[0, 150, 300].map((delay) => (
+        <span
+          key={delay}
+          className="h-2 w-2 animate-bounce rounded-full bg-ink-soft/50"
+          style={{ animationDelay: `${delay}ms` }}
+        />
+      ))}
+    </div>
   );
 }
 

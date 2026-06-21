@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ProductDetail, ProductVariant } from "@/lib/catalog";
 import { formatPKR } from "@/lib/format";
 import { useCart } from "@/store/cart";
@@ -52,6 +52,15 @@ export function ProductView({ product }: { product: ProductDetail }) {
   const price = variant ? variant.price : product.price;
   const canAdd = variant !== null && variant.in_stock;
 
+  // Never let the shopper pick more than is in stock — checkout would reject it.
+  const maxQty = variant && variant.in_stock ? variant.stock_qty : 1;
+  const lowStock = variant?.in_stock && variant.stock_qty <= 5;
+
+  // Re-clamp quantity when the selected variant (and its stock) changes.
+  useEffect(() => {
+    setQty((q) => Math.min(Math.max(1, q), Math.max(1, maxQty)));
+  }, [maxQty]);
+
   function handleAdd() {
     if (!variant) return;
     addItem(
@@ -62,6 +71,7 @@ export function ProductView({ product }: { product: ProductDetail }) {
         variantLabel: variantLabel(variant) || null,
         unitPrice: Number(variant.price),
         image: product.images[0]?.url ?? null,
+        maxQty: variant.stock_qty,
       },
       qty,
     );
@@ -214,8 +224,9 @@ export function ProductView({ product }: { product: ProductDetail }) {
             </button>
             <span className="w-10 text-center text-sm tabular-nums">{qty}</span>
             <button
-              onClick={() => setQty((q) => q + 1)}
-              className="px-4 py-3 text-lg leading-none hover:text-madder"
+              onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+              disabled={qty >= maxQty}
+              className="px-4 py-3 text-lg leading-none hover:text-madder disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:text-ink"
               aria-label="Increase quantity"
             >
               +
@@ -230,6 +241,12 @@ export function ProductView({ product }: { product: ProductDetail }) {
             {added ? "Added to Bag ✓" : canAdd ? "Add to Bag" : "Sold Out"}
           </button>
         </div>
+
+        {lowStock && (
+          <p className="mt-3 text-sm text-madder">
+            Only {variant!.stock_qty} left
+          </p>
+        )}
 
         {added && (
           <p className="mt-3 text-sm text-sage">

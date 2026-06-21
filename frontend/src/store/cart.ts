@@ -19,6 +19,9 @@ export interface CartItem {
   unitPrice: number;
   image: string | null;
   qty: number;
+  // Available stock at add-time — a soft cap so the qty steppers can't exceed
+  // stock. Checkout still re-validates against the live DB (authoritative).
+  maxQty?: number;
 }
 
 interface CartState {
@@ -39,15 +42,18 @@ export const useCart = create<CartState>()(
             (i) => i.variantId === item.variantId,
           );
           if (existing) {
+            // Refresh the snapshot (price/maxQty) and cap the merged quantity.
+            const max = item.maxQty ?? existing.maxQty ?? Infinity;
             return {
               items: state.items.map((i) =>
                 i.variantId === item.variantId
-                  ? { ...i, qty: i.qty + qty }
+                  ? { ...i, ...item, qty: Math.min(i.qty + qty, max) }
                   : i,
               ),
             };
           }
-          return { items: [...state.items, { ...item, qty }] };
+          const cap = item.maxQty ?? Infinity;
+          return { items: [...state.items, { ...item, qty: Math.min(qty, cap) }] };
         }),
       setQty: (variantId, qty) =>
         set((state) => ({
@@ -55,7 +61,9 @@ export const useCart = create<CartState>()(
             qty <= 0
               ? state.items.filter((i) => i.variantId !== variantId)
               : state.items.map((i) =>
-                  i.variantId === variantId ? { ...i, qty } : i,
+                  i.variantId === variantId
+                    ? { ...i, qty: i.maxQty ? Math.min(qty, i.maxQty) : qty }
+                    : i,
                 ),
         })),
       removeItem: (variantId) =>

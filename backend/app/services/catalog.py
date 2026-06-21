@@ -1,5 +1,6 @@
 """Catalog query + mapping logic shared by the public product/category APIs."""
 
+import re
 from decimal import Decimal
 from enum import Enum
 
@@ -119,10 +120,21 @@ async def list_products(
             )
         )
     if search:
-        like = f"%{search}%"
-        conditions.append(
-            or_(Product.name.ilike(like), Product.description.ilike(like))
-        )
+        # Tokenized search: split into alphanumeric words and AND them, each
+        # matching name OR description. A single rigid substring missed real
+        # titles ("Sana Safinaz Mahay Lawn 3" never matches the literal name
+        # "Sana Safinaz Unstitched Mahay Lawn 3 Piece Suit"); per-token matching
+        # finds it regardless of word order or punctuation.
+        tokens = [
+            t
+            for t in re.findall(r"[a-z0-9]+", search.lower())
+            if len(t) >= 2 or t.isdigit()
+        ]
+        for token in tokens:
+            like = f"%{token}%"
+            conditions.append(
+                or_(Product.name.ilike(like), Product.description.ilike(like))
+            )
     if brand:
         conditions.append(Product.brand == brand)
     if min_price is not None:

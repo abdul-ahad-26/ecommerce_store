@@ -34,10 +34,14 @@ REGISTRY: dict[str, ModelSpec] = {
     "openai:gpt-4.1-mini": ModelSpec("openai", "gpt-4.1-mini", "OpenAI · GPT-4.1 mini"),
     "openai:gpt-4.1-nano": ModelSpec("openai", "gpt-4.1-nano", "OpenAI · GPT-4.1 nano"),
     "openai:gpt-4o-mini": ModelSpec("openai", "gpt-4o-mini", "OpenAI · GPT-4o mini"),
-    "groq:llama-3.3-70b": ModelSpec(
-        "groq", "llama-3.3-70b-versatile", "Groq · Llama 3.3 70B"
+    # gpt-oss-120b is the reliable free option; Llama 3.3 on Groq intermittently
+    # fails to format tool calls ("Failed to call a function"), so it's best-effort.
+    "groq:gpt-oss-120b": ModelSpec(
+        "groq", "openai/gpt-oss-120b", "Groq · GPT-OSS 120B (recommended)"
     ),
-    "groq:gpt-oss-120b": ModelSpec("groq", "openai/gpt-oss-120b", "Groq · GPT-OSS 120B"),
+    "groq:llama-3.3-70b": ModelSpec(
+        "groq", "llama-3.3-70b-versatile", "Groq · Llama 3.3 70B (flaky tools)"
+    ),
 }
 
 

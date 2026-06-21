@@ -107,6 +107,15 @@ async def test_search_returns_only_published(catalog_data):
     assert "secret-draft" not in slugs  # unpublished hidden
 
 
+async def test_search_is_tokenized(catalog_data):
+    # Reordered words + punctuation must still find "Rose Lawn 3pc".
+    async with TestSession() as db:
+        reordered = await tools.search_products_impl(db, query="lawn rose")
+        punctuated = await tools.search_products_impl(db, query="Rose — Lawn!")
+    assert "rose-lawn-3pc" in {p["slug"] for p in reordered["products"]}
+    assert "rose-lawn-3pc" in {p["slug"] for p in punctuated["products"]}
+
+
 async def test_product_details_exposes_variant_stock(catalog_data):
     async with TestSession() as db:
         res = await tools.get_product_details_impl(db, "rose-lawn-3pc")
@@ -121,6 +130,20 @@ async def test_facets_lists_real_values(catalog_data):
     assert {"slug": "lawn", "name": "Lawn"} in res["categories"]
     assert "S" in res["sizes"] and "M" in res["sizes"]
     assert "Red" in res["colors"]
+
+
+async def test_present_products_builds_cards(catalog_data):
+    async with TestSession() as db:
+        cards = await tools.present_products_impl(
+            db, ["rose-lawn-3pc", "secret-draft", "does-not-exist"]
+        )
+    # Only the published product yields a card.
+    assert len(cards) == 1
+    card = cards[0]
+    assert card["slug"] == "rose-lawn-3pc"
+    assert card["in_stock"] is True
+    # Quick-add points at the first in-stock variant (S / Red, qty 4).
+    assert card["variant_id"] and card["available_qty"] == 4
 
 
 def test_policy_lookup_and_unknown():
@@ -142,7 +165,9 @@ async def test_order_status_scoped_to_owner(catalog_data):
         ok = await tools.get_order_status_impl(db, owner, "MRTEST0001")
         denied = await tools.get_order_status_impl(db, other, "MRTEST0001")
     assert ok["status"] == "pending"
-    assert denied["error"] == "not_found"  # never leak another user's order
+    # Never leak another user's order — and signal it distinctly from a guest so
+    # the model says "not on your account" rather than "log in".
+    assert denied["error"] == "not_found_for_user"
 
 
 async def test_propose_cart_action_in_stock(catalog_data):
@@ -222,15 +247,17 @@ class _FakeStreaming:
     """Mimics RunResultStreaming: yields text deltas, then 'tool' fills the
     context's proposed_actions (as the real propose_cart_action tool would)."""
 
-    def __init__(self, deltas, actions, context):
+    def __init__(self, deltas, actions, context, products=()):
         self._deltas = deltas
         self._actions = actions
+        self._products = products
         self._context = context
 
     async def stream_events(self):
         for d in self._deltas:
             yield _RawDeltaEvent(d)
         self._context.proposed_actions.extend(self._actions)
+        self._context.proposed_products.extend(self._products)
 
 
 async def test_stream_emits_ai_sdk_protocol(monkeypatch):
@@ -242,10 +269,14 @@ async def test_stream_emits_ai_sdk_protocol(monkeypatch):
         "qty": 1,
     }
 
-    def fake_run_streamed(agent, input_items, *, context, max_turns):
-        return _FakeStreaming(["Hel", "lo"], [action], context)
+    product = {"slug": "rose-lawn-3pc", "name": "Rose Lawn 3pc", "price": 4500.0}
 
-    monkeypatch.setattr(stream_mod, "build_agent", lambda key: object())
+    def fake_run_streamed(agent, input_items, *, context, max_turns):
+        return _FakeStreaming(["Hel", "lo"], [action], context, products=[product])
+
+    monkeypatch.setattr(
+        stream_mod, "build_agent", lambda key, page_note="": object()
+    )
     monkeypatch.setattr(stream_mod.Runner, "run_streamed", fake_run_streamed)
 
     ctx = tools.AssistantContext(db=None)  # db unused by the fake
@@ -261,7 +292,8 @@ async def test_stream_emits_ai_sdk_protocol(monkeypatch):
     assert chunks[0] == 'data: {"type":"start"}\n\n'
     assert '"type":"text-start"' in joined
     assert '"type":"text-delta"' in joined and '"delta":"Hel"' in joined
+    assert '"type":"data-product"' in joined and "rose-lawn-3pc" in joined
     assert '"type":"data-cart-action"' in joined and '"variant_id":1' in joined
-    # finish comes after the cart action, and the stream terminates with [DONE].
+    # finish comes after the data parts, and the stream terminates with [DONE].
     assert joined.index('"finish"') > joined.index("data-cart-action")
     assert chunks[-1] == "data: [DONE]\n\n"

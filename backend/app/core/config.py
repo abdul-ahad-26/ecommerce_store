@@ -78,6 +78,14 @@ class Settings(BaseSettings):
     # latency and token cost.
     ASSISTANT_MAX_TURNS: int = 8
     ASSISTANT_MAX_HISTORY: int = 20
+    # Stream the agent's reasoning + every tool call to stdout (server logs).
+    # Handy in dev to watch the agent work; noisy for production.
+    ASSISTANT_VERBOSE: bool = False
+    # Hard cap on a single reply's output tokens — bounds worst-case cost and
+    # blunts off-topic abuse (a runaway answer simply can't be generated).
+    ASSISTANT_MAX_TOKENS: int = 700
+    # Per-IP request budget per minute on the chat endpoints (0 = disabled).
+    ASSISTANT_RATE_LIMIT_PER_MIN: int = 20
     # Provider keys. OpenAI enables the tracing dashboard; Groq is a free
     # OpenAI-compatible alternative for comparison. Either may be empty.
     OPENAI_API_KEY: str = ""
