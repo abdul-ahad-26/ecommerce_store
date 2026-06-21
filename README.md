@@ -47,12 +47,19 @@ across three platforms with cross-origin auth done properly.
 - Product CRUD with variant management + Cloudinary image upload
 - Category management · order status workflow (pending → delivered)
 
+**AI shopping assistant**
+- Floating chat widget that streams answers token-by-token (OpenAI Agents SDK → Vercel AI SDK)
+- Tool-using "agent-lite": grounds every answer in **read-only** catalog/order tools — never invents stock, price, or sizes
+- Suggests "add to cart" as a confirmable button (model proposes, the customer/cart executes — no LLM writes)
+- Order tracking strictly scoped to the logged-in customer's own orders
+- Pluggable models: swap OpenAI ↔ Groq via one env var (or a dev model picker) — see [`backend/app/services/assistant/`](backend/app/services/assistant)
+
 **Engineering**
 - Single-transaction checkout with row-locked stock decrement (no oversell)
 - Order line-items snapshot name/price/image/slug — orders stay intact if the catalog changes
 - Transparent access-token refresh-and-retry
 - SEO: dynamic `sitemap.xml`, `robots.txt`, product JSON-LD, Open Graph
-- **44 backend tests** (auth, catalog, checkout, accounts, admin authorization)
+- **66 backend tests** (auth, catalog, checkout, accounts, admin authorization, AI assistant tools/streaming)
 
 ## Architecture
 
@@ -77,6 +84,7 @@ across three platforms with cross-origin auth done properly.
 | Database | PostgreSQL (Neon) |
 | Images   | Cloudinary (admin signed uploads) |
 | Payments | Cash on Delivery |
+| AI       | OpenAI Agents SDK (backend agent + tools) · Vercel AI SDK (`useChat` streaming UI) · OpenAI / Groq models |
 | Hosting  | Vercel (web) · Render (API) · Neon (DB) |
 
 ## Local development

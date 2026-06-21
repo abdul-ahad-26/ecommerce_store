@@ -24,6 +24,12 @@ export function setAccessToken(token: string | null): void {
   accessToken = token;
 }
 
+/** Current in-memory access token (client only). Used by the assistant widget,
+ * which streams via the AI SDK transport rather than apiFetch. */
+export function getAccessToken(): string | null {
+  return accessToken;
+}
+
 /**
  * Optional refresh handler. When a request 401s with a token present, apiFetch
  * calls this once to mint a fresh access token, then retries. Registered by the

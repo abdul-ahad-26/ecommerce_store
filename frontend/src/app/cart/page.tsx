@@ -83,7 +83,10 @@ export default function CartPage() {
                       </span>
                       <button
                         onClick={() => setQty(item.variantId, item.qty + 1)}
-                        className="px-3 py-1.5 hover:text-madder"
+                        disabled={
+                          item.maxQty !== undefined && item.qty >= item.maxQty
+                        }
+                        className="px-3 py-1.5 hover:text-madder disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:text-ink"
                         aria-label="Increase quantity"
                       >
                         +
@@ -95,6 +98,9 @@ export default function CartPage() {
                     >
                       Remove
                     </button>
+                    {item.maxQty !== undefined && item.qty >= item.maxQty && (
+                      <span className="text-xs text-madder">Max available</span>
+                    )}
                   </div>
                 </div>
 
