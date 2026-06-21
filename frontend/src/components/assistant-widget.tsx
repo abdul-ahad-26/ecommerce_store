@@ -36,9 +36,6 @@ type AssistantUIMessage = UIMessage<
   { "cart-action": CartActionData; product: ProductCardData }
 >;
 
-const CID_KEY = "meher-assistant-cid";
-const MSGS_KEY = "meher-assistant-msgs";
-
 const SUGGESTIONS = [
   "Show me lawn under Rs 5,000",
   "What's your COD policy?",
@@ -101,7 +98,7 @@ export function AssistantWidget() {
       }),
   );
 
-  const { messages, sendMessage, status, error, setMessages } =
+  const { messages, sendMessage, status, error } =
     useChat<AssistantUIMessage>({ transport });
 
   const busy = status === "submitted" || status === "streaming";
@@ -137,34 +134,13 @@ export function AssistantWidget() {
     };
   }, [pathname]);
 
-  // Restore the conversation (id + messages) once; persist on every change so a
-  // refresh keeps context. The id also groups the runs in OpenAI tracing.
+  // Fresh conversation id per page load. The widget lives in the layout, so it
+  // is NOT remounted on client-side navigation (chat is retained) but IS reset
+  // on a hard refresh (chat clears) — which also gives a new id. The id groups
+  // this session's runs in OpenAI tracing.
   useEffect(() => {
-    try {
-      let cid = sessionStorage.getItem(CID_KEY);
-      if (!cid) {
-        cid = crypto.randomUUID();
-        sessionStorage.setItem(CID_KEY, cid);
-      }
-      conversationIdRef.current = cid;
-      const saved = sessionStorage.getItem(MSGS_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length) setMessages(parsed);
-      }
-    } catch {
-      /* sessionStorage unavailable — run without persistence */
-    }
-  }, [setMessages]);
-
-  useEffect(() => {
-    if (messages.length === 0) return;
-    try {
-      sessionStorage.setItem(MSGS_KEY, JSON.stringify(messages));
-    } catch {
-      /* ignore quota/serialization errors */
-    }
-  }, [messages]);
+    conversationIdRef.current = crypto.randomUUID();
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
