@@ -1,11 +1,14 @@
 # PRD — Meher AI Shopping Assistant
 
-Status: **Draft for build** · Owner: Abdul Ahad · Last updated: 2026-06-20
+Status: **Phase 0 & 1 shipped + deployed** · Phase 2 (multimodal) pending ·
+Owner: Abdul Ahad · Last updated: 2026-06-21
 
-This PRD covers the whole assistant — what exists, what's broken, and what we'll
-build — grounded in verified behavior (reproduced bugs, real catalog data, the
-actual SDK versions in the repo). Nothing here is aspirational hand-waving; every
-feature maps to a concrete change and acceptance criteria.
+This PRD covers the whole assistant — what exists, what was fixed, and what's
+next — grounded in verified behavior (reproduced bugs, real catalog data, live
+production testing, the actual SDK versions in the repo). Every feature maps to a
+concrete change and acceptance criteria. Phase 0/1 items below are **done and
+verified in the browser against production**; §6.11 (multimodal) is the remaining
+work.
 
 ---
 
@@ -54,38 +57,40 @@ minimal `assistant_events` log (cart-action confirmed, card clicked) is a
 
 ---
 
-## 4. Current State (verified)
+## 4. Current State (shipped & deployed)
 
-**Built and working:**
+**Stack (live):**
 - Backend agent on the **OpenAI Agents SDK** (`openai-agents 0.17.5`), read-only
-  tools over `catalog.py` / `orders.py`, a `propose_cart_action` tool, streaming
-  via SSE in the **Vercel AI SDK v6** UI-message-stream protocol.
+  tools over `catalog.py` / `orders.py`, `present_products` + `propose_cart_action`
+  tools, streaming via SSE in the **Vercel AI SDK v6** UI-message-stream protocol.
 - Frontend floating widget (`@ai-sdk/react 3.x` `useChat` + `DefaultChatTransport`)
-  with token streaming, a confirmable Add-to-cart button, and a dev model picker.
-- Model registry (OpenAI + Groq) swappable by env var / per-request.
-- Observability: OpenAI dashboard tracing **and** verbose server logs (confirmed
-  working).
-- 66 backend tests pass; frontend `tsc` clean.
+  with token streaming, product cards, and confirmable add-to-cart.
+- Model registry (OpenAI + Groq) swappable by env var; **dev-only** model picker.
+- Observability: OpenAI tracing + `ASSISTANT_VERBOSE` server logs (both confirmed).
+- Deployed: Vercel (frontend) + Render (backend) + Neon (DB). **68 backend tests
+  pass; frontend `tsc` clean.**
 
-**Confirmed bugs / gaps (reproduced this session):**
-- **Groq models 400** — `get_facets` (no args) emits a JSON schema with
-  `required` but no `properties`; Groq rejects it. (§6.8)
-- **Search misses named products** — the full query is one `ILIKE '%…%'`
-  substring, so `"Sana Safinaz Mahay Lawn 3"` → 0 hits (real name interleaves
-  "Unstitched"); `"…Shirt + Dupatta"` → 0 (punctuation/spacing). `"Sana Safinaz"`
-  alone → 10. (§6.3)
-- **Quantity has no stock cap** — PDP `+` increments past available stock;
-  customer only learns at checkout. (§6.6)
-- **Order-status messaging** — logged-in user querying an order not on their
-  account is told to "log in" instead of "not on your account." (§6.5)
-- **No product images/links in chat** — bot describes by name/colour/price only;
-  wrong for fashion, and doesn't drive to the PDP. (§6.2)
-- **No page/product context** — "is this in large?" fails; bot can't see the page.
-  (§6.4)
-- **No persistence** — refresh wipes the conversation (in-memory only); backend
-  is stateless and sets no trace `group_id`, so dashboard runs only *look*
-  grouped. (§6.7)
-- **No "thinking" indicator** between send and first token. (§6.1)
+**Phase 0 — correctness (all shipped):**
+- ✅ Groq tool-calling fixed (real cause: strict mode + a param-less tool — see §6.8)
+- ✅ Tokenized catalog search (finds products by any word/order/punctuation) (§6.3)
+- ✅ Order-status returns `not_found_for_user` vs `auth_required` (§6.5)
+- ✅ Quantity capped at stock on PDP **and** cart (§6.6)
+- ✅ Animated typing indicator (§6.1)
+
+**Phase 1 — guided selling (all shipped):**
+- ✅ `present_products` → image/price/PDP-link/add-to-cart cards (§6.2)
+- ✅ Page/product context — "is *this* in large?" resolves (§6.4)
+- ✅ Scope guard (prompt + `max_tokens` cap + per-IP rate limit) (§6.9)
+- ✅ Refresh-clears / navigation-retains chat + per-load trace `group_id` (§6.7)
+- ✅ Model picker hidden in prod; language mirrors the customer (§6.10)
+
+**Known production issue (open):**
+- **Groq `gpt-oss-120b` is intermittently inaccurate.** Live, the same "lawn
+  under 5000" query once returned "we don't have any under Rs 5,000" (false — a
+  Rs 3,299 item exists) and once returned it correctly. The backend/search/data
+  are proven correct; the model fumbles multi-constraint (category + price) tool
+  calls. **Decision: run production on `openai:gpt-4.1-mini` for reliability**
+  (see §6.10 / §7). Groq stays for dev only.
 
 ---
 
@@ -158,28 +163,41 @@ on the north star.
 - **AC:** guest → "please log in"; logged-in + foreign/unknown number → "I can't
   find that order on your account…"; logged-in + own order → status + items.
 
-### 6.6 Quantity respects stock (#1)
-- **Problem:** can select 45 when 3 exist; fails at checkout.
-- **Solution:** PDP quantity capped at the selected variant's `stock_qty`;
-  disable `+` at max; show "Only N left" when low. `propose_cart_action` enforces
-  the same cap (already partly there).
-- **AC:** `+` won't exceed available stock; low-stock note appears; assistant
-  won't propose more than is in stock.
+### 6.6 Quantity respects stock (#1) — ✅ shipped
+- **Problem:** can select 45 when 3 exist; fails at checkout (PDP **and** cart).
+- **Solution:** the cart store carries `maxQty` (available stock at add-time) and
+  clamps centrally in `addItem`/`setQty`, so every `+` (PDP and cart page) is
+  capped; `+` disables at max with an "Only N left" / "Max available" note.
+  `propose_cart_action` and product cards pass `available_qty` so chatbot-added
+  items are capped too. Checkout still re-validates against the live DB.
+- **AC:** `+` won't exceed available stock on PDP or cart; low-stock note shows;
+  assistant won't propose more than is in stock. ✅ verified.
 
-### 6.7 Persistence + real session grouping (#7)
-- **Problem:** refresh wipes the chat; traces only look grouped.
-- **Solution:** generate a client **conversation id**; persist messages to
-  `sessionStorage` under it; pass the id as the trace **`group_id`** so a
-  conversation's runs genuinely group in the OpenAI dashboard.
-- **AC:** refresh restores the visible conversation; the dashboard groups that
-  conversation's runs under one id.
+### 6.7 Refresh-clears / navigation-retains + session grouping (#7) — ✅ shipped
+- **Decision (changed):** we initially added `sessionStorage` persistence so a
+  refresh *kept* the chat. The owner then chose the opposite: **a hard refresh
+  should start a fresh chat, but client-side navigation should keep it.**
+- **Solution:** drop message persistence and rely on in-memory React state. The
+  widget lives in the layout, so it is **not** remounted on client-side
+  navigation (chat retained) but **is** reset on a hard refresh (chat cleared). A
+  new **conversation id** is generated per page load and passed as the trace
+  **`group_id`** so a session's runs group in the OpenAI dashboard.
+- **AC:** navigate between pages → chat retained; hard refresh → chat clears +
+  new trace group. ✅ verified live.
 
-### 6.8 Groq works (#3)
-- **Problem:** param-less tool schema → Groq 400.
-- **Solution:** ensure every tool's `params_json_schema` includes
-  `"properties": {}` when empty (one normalization pass over `ALL_TOOLS`).
-- **AC:** all five registry models (3 OpenAI, 2 Groq) complete a basic
-  tool-using turn end-to-end.
+### 6.8 Groq works (#3) — ✅ shipped (with a caveat)
+- **Problem:** Groq 400'd on tool calls. The "empty `properties`" theory was a
+  red herring (the payload already had it).
+- **Real cause + fix (two layers):** (1) `get_facets` took no args → gave it a
+  real optional `kind` param so no tool sends an empty schema; (2) the actual
+  blocker was **strict mode** — OpenAI's strict function schema forces the model
+  to emit every parameter, and Groq's Llama omits optionals then rejects its own
+  call. Set `strict_mode=False` on all tools (negligible on OpenAI, essential for
+  any OpenAI-compatible provider).
+- **AC:** OpenAI models + `groq:gpt-oss-120b` complete tool-using turns. ⚠️
+  `groq:llama-3.3-70b` intermittently fails to format tool calls → labelled
+  "(flaky tools)"; `gpt-oss-120b` is the recommended Groq model. See §4 for the
+  separate `gpt-oss-120b` accuracy caveat that drives the prod-model choice.
 
 ### 6.9 Stay in scope, cheaply (#6)
 - **Problem:** bot will write code / act as general assistant.
@@ -193,11 +211,19 @@ on the north star.
 - **AC:** "write a calculator in Python" → polite refusal + redirect; a single
   reply can't exceed the token cap; abusive request rates are throttled.
 
-### 6.10 Model flexibility & observability (done / hardening)
-- Keep the registry swap (env + dev picker). Verbose logging behind an
-  `ASSISTANT_VERBOSE` flag; OpenAI tracing on when an OpenAI key is present.
-- **AC:** switching `ASSISTANT_MODEL` (or the dev dropdown) changes the model on
-  the next message; verbose logs show tool calls.
+### 6.10 Model flexibility & observability — ✅ shipped
+- Registry swap via `ASSISTANT_MODEL`. The dev model picker is gated by
+  `ASSISTANT_ALLOW_MODEL_OVERRIDE`, which now **defaults `False`** so the picker
+  and per-request model switching are **hidden in production** (no public model
+  switching / cost abuse); enable it via `.env` in dev.
+- `ASSISTANT_VERBOSE` flag streams agent steps + tool calls to server logs;
+  OpenAI tracing works whenever an OpenAI key is present (even on Groq runs).
+- The system prompt **mirrors the customer's language/script** (English in →
+  English out; only Urdu/Roman Urdu when they use it).
+- **Production model decision:** default to **`openai:gpt-4.1-mini`** for
+  accuracy + native tracing; `gpt-oss-120b` (Groq) is the free dev option.
+- **AC:** picker absent in prod; verbose logs show tool calls; English prompt →
+  English reply. ✅ verified live.
 
 ### 6.11 Multimodal — styling + visual search  (v1 **stretch**, after the above)
 - **6.11a Styling / "complete the look" (cheap, high sales value):** customer
@@ -229,9 +255,12 @@ Decisions (locked):
   the frontend executes. Safe for COD.
 - **No RAG** for catalog; static policy text in a tool/prompt. pgvector reserved
   for **visual** search only (6.11c), not text.
-- **Stateless backend;** conversation history travels with each request. Session
-  identity is a client id used for persistence + trace `group_id`.
+- **Stateless backend;** conversation history travels with each request. The
+  client conversation id (regenerated per page load) is used only for trace
+  `group_id` — there is **no message persistence** (refresh starts fresh).
 - **Model-agnostic registry;** OpenAI native (tracing) + Groq (OpenAI-compatible).
+  **Production runs `openai:gpt-4.1-mini`** for reliability; Groq is dev-only
+  (cheaper/faster but intermittently inaccurate on filtered queries — see §4).
 - **Scope control via prompt + caps,** not a per-message guardrail.
 
 ---
@@ -242,7 +271,7 @@ Decisions (locked):
 |---|---|---|
 | `search_products` | tokenized query; add `primary_image` | compact list incl. image |
 | `get_product_details` | add images; keep per-variant stock | detail incl. images |
-| `get_facets` | **schema fix** (`properties:{}`) | categories/sizes/colours |
+| `get_facets` | add optional `kind` param + `strict_mode=False` (Groq fix) | categories/sizes/colours |
 | `present_products(slugs)` | **new** — emit `data-product` cards | confirmation; cards streamed |
 | `get_store_policy` | unchanged | policy text |
 | `get_order_status` | distinct `auth_required` / `not_found_for_user` / `ok` | scoped status |
@@ -264,12 +293,12 @@ input content part on the user message.
 
 ## 10. Phasing / Roadmap
 
-- **Phase 0 — Correctness (unblocks everything):** 6.8 Groq fix · 6.3 search ·
+- **Phase 0 — Correctness — ✅ DONE & deployed:** 6.8 Groq fix · 6.3 search ·
   6.5 order messaging · 6.6 quantity cap · 6.1 typing indicator.
-- **Phase 1 — Guided selling (the north star):** 6.2 product cards (image+link
-  +add) · 6.4 page context · 6.9 scope/caps · 6.7 persistence + `group_id` ·
-  6.10 hardening.
-- **Phase 2 — Multimodal:** 6.11a styling · 6.11b attribute visual search ·
+- **Phase 1 — Guided selling — ✅ DONE & deployed:** 6.2 product cards (image+
+  link+add) · 6.4 page context · 6.9 scope/caps · 6.7 refresh/nav chat behavior
+  + `group_id` · 6.10 hardening (prod model = gpt-4.1-mini; picker hidden).
+- **Phase 2 — Multimodal (next):** 6.11a styling · 6.11b attribute visual search ·
   then 6.11c pgvector visual similarity · `assistant_events` analytics.
 
 ---
@@ -281,7 +310,7 @@ input content part on the user message.
 | Model still guesses slugs / over-filters | Prompt rules (search→slug), tokenized search, `get_facets` for real values |
 | Image inputs raise cost | Upload size cap; vision only when a photo is attached; cheap model |
 | Cost abuse (off-topic) | Prompt refusal + output token cap + rate limit |
-| Groq schema/feature drift | Schema normalization pass; keep OpenAI as default/prod |
+| Groq inaccuracy on filtered queries (observed in prod) | Run prod on `openai:gpt-4.1-mini`; Groq dev-only; `strict_mode=False` for compatibility |
 | AI SDK protocol drift | Wire format isolated in `stream.py`; pin `ai` version |
 | Cross-account order leak | Strict `user_id` scoping; `not_found_for_user` never reveals data |
 
@@ -299,7 +328,7 @@ After Phase 0/1, validate live (browser automation + manual checklist):
    account." Logged-in own order: status.
 7. "write a calculator in Python" → polite refusal.
 8. Switch to each Groq model → basic turn completes.
-9. Refresh mid-chat → conversation restored; dashboard groups the runs.
+9. Navigate mid-chat → conversation retained; hard refresh → chat clears.
 10. (Stretch) photo: "what do I wear with this?" / "anything like this?".
 
 ---
