@@ -71,9 +71,10 @@ class Settings(BaseSettings):
     ASSISTANT_ENABLED: bool = True
     # Active model key from services/assistant/models.py REGISTRY.
     ASSISTANT_MODEL: str = "openai:gpt-4.1-mini"
-    # Dev convenience: let a request pick a model (for A/B comparison). Keep
-    # False in production so the public can't drive up cost on a pricey model.
-    ASSISTANT_ALLOW_MODEL_OVERRIDE: bool = True
+    # Dev convenience: let a request pick a model (for A/B comparison) and show
+    # the model picker in the widget. Defaults False so production is safe by
+    # default (no public model switching); enable it via .env in development.
+    ASSISTANT_ALLOW_MODEL_OVERRIDE: bool = False
     # Cap the agent loop (LLM turns) and the history window (messages) to bound
     # latency and token cost.
     ASSISTANT_MAX_TURNS: int = 8
